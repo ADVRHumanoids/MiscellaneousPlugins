@@ -17,7 +17,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     // robot and model 
     _robot = robot;
-    _model = XBot::ModelInterface::getModel("/home/user/advr-superbuild/configs/ADVR_shared/kuka_lwr/configs/config_kuka.yaml");
+    _model = XBot::ModelInterface::getModel("/home/embedded/advr-superbuild/configs/ADVR_shared/kuka_lwr/configs/config_kuka.yaml");
+
     
 //     // starting position
 //     _robot->sense();
@@ -65,17 +66,20 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     /* Create cartesian tasks for both hands */
     _left_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_LEFT",
                                                             _qhome,
-                                                            *_model,
+                                                           *_model,
+
                                                             _model->chain("arm1").getTipLinkName(),
                                                             _model->chain("arm1").getBaseLinkName()
-                                                            ) );
+                                                           ) );
      //_left_ee->setActiveJointsMask(active_joints);
 
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
                                                              *_model,
+
                                                              _model->chain("arm1").getTipLinkName(),
                                                              _model->chain("arm1").getBaseLinkName()
+
                                                              ) );
 //     _right_ee->setActiveJointsMask(active_joints);
 
