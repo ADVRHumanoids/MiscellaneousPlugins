@@ -26,6 +26,7 @@
 #include <XBotCore-interfaces/XDomainCommunication.h>
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Vector3.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <std_msgs/Float64.h>
 #include <sensor_msgs/JointState.h>
@@ -47,9 +48,11 @@ public:
 private:
 
     std::vector<std::string> _topic_names, _pipe_names, joint_position;
-    std::vector<ros::Subscriber> _sub, _sub_joint;
+    std::vector<ros::Subscriber> _sub, _sub_joint, _sub_stiffness;
     std::vector<XBot::PublisherNRT<Eigen::Affine3d>> _pub_nrt;
     std::vector<XBot::PublisherNRT<Vector>> _pub_joint;
+    
+    std::vector<XBot::PublisherNRT<Eigen::Vector3d>>  _pub_stiffness;
     
     std::vector<std::string> _grasp_topic_names, _grasp_pipe_names;
     std::vector<XBot::PublisherNRT<double>> _grasp_pub_nrt;
@@ -58,6 +61,8 @@ private:
     void callback(geometry_msgs::PoseStampedConstPtr msg, int id);
     
     void joint_callback(sensor_msgs::JointState::ConstPtr msg, int id);
+    
+    void stiffness_callback(geometry_msgs::Vector3::ConstPtr, int id);
     
     void grasp_callback(std_msgs::Float64::ConstPtr msg, int id);
 
@@ -84,8 +89,12 @@ private:
     
     std::vector<XBot::SharedObject<Eigen::Affine3d>> _shared_obj;
     std::vector<XBot::SharedObject<Vector>> _shared_jointposition;
+    std::vector<XBot::SharedObject<Eigen::Vector3d>>  _shared_stiffness;
+    
+    
     std::vector<XBot::SubscriberRT<Eigen::Affine3d>> _sub_rt;
     std::vector<XBot::SubscriberRT<Vector>> _sub_rtjointposition;
+    std::vector<XBot::SubscriberRT<Eigen::Vector3d>>  _sub_stiffness;
     
     //_grasp
     std::vector<std::string> _sharedobj_grasp_names, _pipe_grasp_names;

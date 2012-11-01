@@ -1,4 +1,4 @@
-#include <MiscellaneousPlugins/IkRosIoPlugin.h>
+ #include <MiscellaneousPlugins/IkRosIoPlugin.h>
 
 REGISTER_XBOT_PLUGIN(IkRosSMPub, MiscPlugins::IkRosRtPlugin)
 
@@ -25,6 +25,12 @@ bool IkRosRtPlugin::init_control_plugin(XBot::Handle::Ptr handle)
     _sharedjointposition_name = {"joint_positions_desired"};
     _shared_jointposition.push_back(handle->getSharedMemory()->getSharedObject<MiscPlugins::Vector>(_sharedjointposition_name[0]));
     _sub_rtjointposition.push_back(XBot::SubscriberRT<MiscPlugins::Vector>(_sharedjointposition_name[0]));
+    
+    
+    _shared_stiffness.push_back(handle->getSharedMemory()->getSharedObject<Eigen::Vector3d>("stiffness"));
+    _sub_stiffness.push_back(XBot::SubscriberRT<Eigen::Vector3d>("stiffness"));
+    
+    
     
     //grasp
     
@@ -59,6 +65,11 @@ void IkRosRtPlugin::control_loop(double time, double period)
         _shared_jointposition[0].set(jointvect);
     }
     
+    
+     Eigen::Vector3d stvect;
+    if(_sub_stiffness[0].read(stvect) ){
+        _shared_stiffness[0].set(stvect);
+    }
     
     //grasp
    for( int i = 0; i < _sharedobj_grasp_names.size(); i++ ){

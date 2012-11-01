@@ -21,6 +21,8 @@ bool MiscPlugins::IkRosIoPlugin::init(std::string path_to_config_file,
     
     joint_position.push_back("joint_positions_desired");
     _pub_joint.push_back(XBot::PublisherNRT<MiscPlugins::Vector>(joint_position[0]));
+    
+    _pub_stiffness.push_back(XBot::PublisherNRT<Eigen::Vector3d>("stiffness"));
 
     ros::NodeHandle n;
 
@@ -37,6 +39,9 @@ bool MiscPlugins::IkRosIoPlugin::init(std::string path_to_config_file,
     _sub_joint.push_back(n.subscribe<sensor_msgs::JointState>(joint_position[0],1,
        boost::bind(&MiscPlugins::IkRosIoPlugin::joint_callback,this,_1, 0)));
    
+    
+    _sub_stiffness.push_back(n.subscribe<geometry_msgs::Vector3>("stiffness",1,
+       boost::bind(&MiscPlugins::IkRosIoPlugin::stiffness_callback,this,_1, 0)));
     
     //grasp
     _grasp_topic_names.push_back("w_grasp_left");
@@ -105,6 +110,17 @@ void MiscPlugins::IkRosIoPlugin::joint_callback(sensor_msgs::JointState::ConstPt
   }
   
   _pub_joint[id].write(joint_position);
+  
+}
+
+void MiscPlugins::IkRosIoPlugin::stiffness_callback(geometry_msgs::Vector3::ConstPtr msg, int id){
+  Eigen::Vector3d vect;
+  
+  vect[0]=msg->x;
+  vect[1]=msg->y;
+  vect[2]=msg->z;
+  
+  _pub_stiffness[id].write(vect);
   
 }
 
