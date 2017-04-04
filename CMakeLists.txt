@@ -38,11 +38,13 @@ endif()
 # find packages
 find_package(XCM REQUIRED)
 find_package(OpenSoT QUIET)
+find_package(catkin QUIET COMPONENTS roscpp geometry_msgs)
 
 # include
 include_directories(include
                     ${XCM_INCLUDE_DIRS}
                     ${OpenSoT_INCLUDE_DIRS}
+                    ${catkin_INCLUDE_DIRS}
                     )
 
 
@@ -58,7 +60,16 @@ if(${OpenSoT_FOUND})
     ycm_library_install(OpenSotIk 1 0 0)
 endif()
 
+### Ros ik IO plugin
+if(${catkin_FOUND})
+    add_library(IkRosIo SHARED src/IkRosIoPlugin.cpp)
+    target_link_libraries(IkRosIo ${XCM_LIBRARIES} ${catkin_LIBRARIES})
+    ycm_library_install(IkRosIo 1 0 0)
 
+    add_library(IkRosSharedMemoryPublisher SHARED src/IkRosSharedMemoryPublisher.cpp)
+    target_link_libraries(IkRosSharedMemoryPublisher ${XCM_LIBRARIES} ${catkin_LIBRARIES})
+    ycm_library_install(IkRosSharedMemoryPublisher 1 0 0)
+endif()
 
 
 include(AddUninstallTarget)

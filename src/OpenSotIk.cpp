@@ -35,7 +35,6 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                             "world"
                                                             ) );
     _left_ee->setActiveJointsMask(active_joints);
-//     _left_ee->setLambda(100);
 
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
@@ -44,7 +43,6 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                              "world"
                                                              ) );
     _right_ee->setActiveJointsMask(active_joints);
-//     _right_ee->setLambda(100);
 
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
@@ -120,8 +118,6 @@ void OpenSotIk::control_loop(double time, double period)
 
     _joint_vel_lims->setVelocityLimits( (0 + alpha*(_final_qdot_lim - 0)) );
 
-    /* Simple upward reference motion */
-//     _right_ref->translation().y() += 0.05*period;
 
     /* Set cartesian tasks reference */
     _left_ee->setReference(_left_ref->matrix());
