@@ -19,6 +19,7 @@
 
 #include <MiscellaneousPlugins/Homing.h>
 
+/* Specify that the class MiscPlugins::Homing is a Xbot RT plugin with name "Homing" */
 REGISTER_XBOT_PLUGIN(Homing, MiscPlugins::Homing)
 
 namespace MiscPlugins {
