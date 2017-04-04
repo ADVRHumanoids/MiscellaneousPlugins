@@ -15,7 +15,7 @@ project(MiscellaneousPlugin)
 # Add cmake dir and include custom macros
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(XCM REQUIRED)
+
 
 set(ENABLE_XENO CACHE BOOL "ON")
 if ( ${ENABLE_XENO} )
@@ -36,26 +36,29 @@ else()
 endif()
 
 # find packages
+find_package(XCM REQUIRED)
+find_package(OpenSoT QUIET)
 
 # include
 include_directories(include
                     ${XCM_INCLUDE_DIRS}
+                    ${OpenSoT_INCLUDE_DIRS}
                     )
 
-###########
-## Build ##
-###########
+
+### Homing
 add_library(Homing SHARED src/Homing.cpp)
-
-##########
-## Link ##
-##########
 target_link_libraries(Homing ${XCM_LIBRARIES})
-
-#############
-## Install ##
-#############
 ycm_library_install(Homing 1 0 0)
+
+### OpenSoT IK
+if(${OpenSoT_FOUND})
+    add_library(OpenSotIk SHARED src/OpenSotIk.cpp)
+    target_link_libraries(OpenSotIk ${XCM_LIBRARIES} ${OpenSoT_LIBRARIES})
+    ycm_library_install(OpenSotIk 1 0 0)
+endif()
+
+
 
 
 include(AddUninstallTarget)
