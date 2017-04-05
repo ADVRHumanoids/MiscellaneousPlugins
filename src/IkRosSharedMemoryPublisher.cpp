@@ -26,6 +26,7 @@ void IkRosRtPlugin::control_loop(double time, double period)
         Eigen::Affine3d pose;
         if( _sub_rt[i].read(pose) ){
             *(_shared_obj[i]) = pose;
+//             std::cout << pose.matrix() << std::endl;
         }
     }
 }
