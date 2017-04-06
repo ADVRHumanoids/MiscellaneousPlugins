@@ -1,4 +1,6 @@
 #include <MiscellaneousPlugins/OpenSotIk.h>
+#include <OpenSoT/tasks/velocity/MinimizeAcceleration.h>
+#include <OpenSoT/tasks/velocity/Manipulability.h>
 
 REGISTER_XBOT_PLUGIN(OpenSotIk, MiscPlugins::OpenSotIk)
 
@@ -34,7 +36,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                             _model->chain("left_arm").getTipLinkName(),
                                                             "world"
                                                             ) );
-    _left_ee->setActiveJointsMask(active_joints);
+//     _left_ee->setActiveJointsMask(active_joints);
 
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
@@ -42,14 +44,23 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                              _model->chain("right_arm").getTipLinkName(),
                                                              "world"
                                                              ) );
-    _right_ee->setActiveJointsMask(active_joints);
+//     _right_ee->setActiveJointsMask(active_joints);
 
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
     Eigen::VectorXd weight;
     weight.setOnes((_model->getJointNum()));
     weight(0) = 100;
+//     _postural->setLambda(0.0);
     _postural->setWeight(weight.asDiagonal());
+
+    /* Create min acc task */
+    OpenSoT::tasks::velocity::MinimizeAcceleration::Ptr min_acc( new OpenSoT::tasks::velocity::MinimizeAcceleration(_qhome) );
+
+    /* Manipulability task */
+    OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_right( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _right_ee) );
+    OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_left( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _left_ee) );
+
 
     /* Create joint limits & velocity limits */
     Eigen::VectorXd qmin, qmax, qdotmax;
@@ -63,12 +74,10 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(qdotmax_min, 0.001, _model->getJointNum()) );
 
     /* Create autostack and set solver */
-    _autostack = ( (/*_right_ee +*/ _left_ee) / _postural ) << _joint_lims << _joint_vel_lims;
-
+    _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims << _joint_vel_lims;
     _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds()) );
 
-    // Logger
-
+    /* Logger */
     Eigen::Affine3d left_pose, right_pose;
     _logger->add("left_ref_pos", _left_ref->translation());
     _logger->add("right_ref_pos", _right_ref->translation());
@@ -99,6 +108,14 @@ void OpenSotIk::on_start(double time)
     _model->getPose(_left_ee->getDistalLink(), *_left_ref);
     _model->getPose(_right_ee->getDistalLink(), *_right_ref);
 
+    /* Set cartesian tasks reference */
+    _left_ee->setReference(_left_ref->matrix());
+    _right_ee->setReference(_right_ref->matrix());
+
+    _left_ee->setLambda(0);
+    _right_ee->setLambda(0);
+    _postural->setLambda(0);
+
     _start_time = time;
 
     std::cout << "OpenSotIkTestPlugin STARTED!\nInitial q is " << _q.transpose() << std::endl;
@@ -111,12 +128,14 @@ void OpenSotIk::control_loop(double time, double period)
     _model->setJointPosition(_q);
     _model->update();
 
-    /* HACK: shape vel lim to avoid discontinuity */
+    /* HACK: shape IK gain to avoid discontinuity */
     double alpha = 0;
-    alpha = (time - _start_time)/10;
+    alpha = (time - _start_time)/100;
     alpha = alpha > 1 ? 1 : alpha;
 
-    _joint_vel_lims->setVelocityLimits( (0 + alpha*(_final_qdot_lim - 0)) );
+    _left_ee->setLambda(alpha);
+    _right_ee->setLambda(alpha);
+    _postural->setLambda(alpha);
 
 
     /* Set cartesian tasks reference */
