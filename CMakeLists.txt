@@ -71,5 +71,9 @@ if(${catkin_FOUND})
     ycm_library_install(IkRosSharedMemoryPublisher 1 0 0)
 endif()
 
+### Poses
+add_library(Poses SHARED src/Poses.cpp)
+target_link_libraries(Poses ${XCM_LIBRARIES})
+ycm_library_install(Poses 1 0 0)
 
 include(AddUninstallTarget)
