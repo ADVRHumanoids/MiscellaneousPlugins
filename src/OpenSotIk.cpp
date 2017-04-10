@@ -1,6 +1,7 @@
 #include <MiscellaneousPlugins/OpenSotIk.h>
 #include <OpenSoT/tasks/velocity/MinimizeAcceleration.h>
 #include <OpenSoT/tasks/velocity/Manipulability.h>
+#include <OpenSoT/tasks/velocity/MinimumEffort.h>
 
 REGISTER_XBOT_PLUGIN(OpenSotIk, MiscPlugins::OpenSotIk)
 
@@ -14,7 +15,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     _robot = robot;
     _model = XBot::ModelInterface::getModel(path_to_config_file);
-
+    
     _robot->sense();
     _robot->model().getJointPosition(_q0);
 
@@ -60,6 +61,10 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     /* Manipulability task */
     OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_right( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _right_ee) );
     OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_left( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _left_ee) );
+
+    /* Minimum effort task */
+    OpenSoT::tasks::velocity::MinimumEffort::Ptr min_effort( new OpenSoT::tasks::velocity::MinimumEffort(_qhome, *_model) );
+    min_effort->setLambda(0.01);
 
 
     /* Create joint limits & velocity limits */
