@@ -8,8 +8,8 @@ REGISTER_XBOT_PLUGIN(OpenSotIk, MiscPlugins::OpenSotIk)
 namespace MiscPlugins {
 
 bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
-                                              XBot::SharedMemory::Ptr shared_memory,
-                                              XBot::RobotInterface::Ptr robot)
+                                    XBot::SharedMemory::Ptr shared_memory,
+                                    XBot::RobotInterface::Ptr robot)
 {
     _logger = XBot::MatLogger::getLogger("/tmp/OpenSotIk_logger");
 

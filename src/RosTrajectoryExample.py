@@ -16,24 +16,24 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
 
         msg = PoseStamped()
-        msg.pose.position.x = 0.5
+        msg.pose.position.x = 0.6
         msg.pose.position.y = 0.4
-        msg.pose.position.z = -0.5 * math.sin(rospy.Time.now().to_sec())
+        msg.pose.position.z = 0.5 * math.sin(rospy.Time.now().to_sec())
         msg.pose.orientation.x = 0
-        msg.pose.orientation.y = 0
+        msg.pose.orientation.y = 1
         msg.pose.orientation.z = 0
-        msg.pose.orientation.w = 1
+        msg.pose.orientation.w = 0
 
         pub_left.publish(msg)
 
         msg = PoseStamped()
-        msg.pose.position.x = 0.5
+        msg.pose.position.x = 1.0
         msg.pose.position.y = -0.4
         msg.pose.position.z = 0.5 * math.sin(rospy.Time.now().to_sec())
         msg.pose.orientation.x = 0
-        msg.pose.orientation.y = 0
+        msg.pose.orientation.y = 1
         msg.pose.orientation.z = 0
-        msg.pose.orientation.w = 1
+        msg.pose.orientation.w = 0
 
         pub_right.publish(msg)
 
