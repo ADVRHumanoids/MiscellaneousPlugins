@@ -38,6 +38,7 @@ endif()
 # find packages
 find_package(XCM REQUIRED)
 find_package(OpenSoT QUIET)
+find_package(iDynTree QUIET)
 find_package(catkin QUIET COMPONENTS roscpp geometry_msgs)
 
 # include
@@ -56,7 +57,7 @@ ycm_library_install(Homing 1 0 0)
 ### OpenSoT IK
 if(${OpenSoT_FOUND})
     add_library(OpenSotIk SHARED src/OpenSotIk.cpp)
-    target_link_libraries(OpenSotIk ${XCM_LIBRARIES} ${OpenSoT_LIBRARIES})
+    target_link_libraries(OpenSotIk ${XCM_LIBRARIES} ${OpenSoT_LIBRARIES} ${iDynTree_LIBRARIES})
     ycm_library_install(OpenSotIk 1 0 0)
 endif()
 
