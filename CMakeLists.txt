@@ -76,4 +76,9 @@ add_library(Poses SHARED src/Poses.cpp)
 target_link_libraries(Poses ${XCM_LIBRARIES})
 ycm_library_install(Poses 1 0 0)
 
+### TorqueExample
+add_library(TorqueExample SHARED src/TorqueExample.cpp)
+target_link_libraries(TorqueExample ${XCM_LIBRARIES})
+ycm_library_install(TorqueExample 2 1 0)
+
 include(AddUninstallTarget)
