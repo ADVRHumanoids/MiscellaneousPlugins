@@ -46,11 +46,24 @@ void MiscPlugins::TorqueExample::control_loop(double time, double period)
         
         if( current_command.str() == "impedance"){
             // get starting position
+            
         }
         
         if( current_command.str() == "gcomp"){
             // get starting position
+            _robot->getStiffness(_k0);
+            _robot->getDamping(_d0);
+            _robot->getMotorPosition(_q0);
+            
         }
+        
+        if( current_command.str() == "remove_gcomp"){
+            // get starting position
+
+            
+        }
+        
+        
     }
     
     
@@ -79,8 +92,39 @@ void MiscPlugins::TorqueExample::control_loop(double time, double period)
         return;
     }
     
+    if( current_command.str() == "remove_gcomp"){
+        // command tau = imp ctrl, qref = homing
+        _tauref = _tauref*0;
+        _robot->setEffortReference(_tauref);
+        _robot->move();
+        return;
+    }
+    
     if( current_command.str() == "gcomp"){
         // command tau = imp ctrl (low low gains) + g(q), qref = homing
+        
+        double alpha = (time - _starting_time)/4.3;
+        alpha = alpha > 1 ? 1 : alpha;
+        alpha = alpha < 0 ? 0 : alpha;
+        
+        _robot->setPositionReference(_q0);
+        
+        _robot->model().computeGravityCompensation(_tauref);
+        _robot->model().setJointEffort(alpha*_tauref);
+        _robot->setReferenceFrom(_robot->model(), XBot::Sync::Effort);
+        
+        
+        double beta = (time - _starting_time - 4.3)/5.4;
+        beta = beta > 0.96 ? 0.96 : beta;
+        beta = beta < 0 ? 0 : beta;
+        
+        _robot->setStiffness(_k0*(1-beta));
+        _robot->setDamping(_d0*(1-beta));
+        
+        _robot->move();
+        
+        
+        
         return;
     }
     
