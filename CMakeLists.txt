@@ -35,6 +35,15 @@ else()
     message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+# Add cmake dir and include custom macros
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+set(ENABLE_XENO CACHE BOOL "ON")
+if ( ${ENABLE_XENO} )
+   find_package(Xenomai)
+endif()
+
+
 # find packages
 find_package(XCM REQUIRED)
 find_package(OpenSoT QUIET)
@@ -81,5 +90,9 @@ ycm_library_install(Poses 1 0 0)
 add_library(TorqueExample SHARED src/TorqueExample.cpp)
 target_link_libraries(TorqueExample ${XCM_LIBRARIES})
 ycm_library_install(TorqueExample 2 1 0)
+
+if ( Xenomai_FOUND )
+    set_xeno_flags(TorqueExample)
+endif()
 
 include(AddUninstallTarget)
