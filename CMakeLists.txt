@@ -63,6 +63,13 @@ add_library(Homing SHARED src/Homing.cpp)
 target_link_libraries(Homing ${XCM_LIBRARIES})
 ycm_library_install(Homing 1 0 0)
 
+
+### BasicFsm
+add_library(BasicFsm SHARED src/BasicFsm.cpp)
+target_link_libraries(BasicFsm ${XCM_LIBRARIES})
+ycm_library_install(BasicFsm 1 0 0)
+
+
 ### OpenSoT IK
 if(${OpenSoT_FOUND})
     add_library(OpenSotIk SHARED src/OpenSotIk.cpp)
