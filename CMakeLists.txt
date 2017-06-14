@@ -9,7 +9,6 @@ endif(COMMAND cmake_policy)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(MacroYCMInstallLibrary)
 
-# XBotCore
 project(MiscellaneousPlugin)
 
 # Add cmake dir and include custom macros
