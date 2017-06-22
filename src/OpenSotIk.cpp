@@ -34,7 +34,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _left_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_LEFT",
                                                             _qhome,
                                                             *_model,
-                                                            _model->chain("left_arm").getTipLinkName(),
+                                                            "LSoftHand",
+//                                                             _model->chain("left_arm").getTipLinkName(),
                                                             "world"
                                                             ) );
 //     _left_ee->setActiveJointsMask(active_joints);
@@ -42,7 +43,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
                                                              *_model,
-                                                             _model->chain("right_arm").getTipLinkName(),
+                                                             "RSoftHand",
+//                                                              _model->chain("right_arm").getTipLinkName(),
                                                              "world"
                                                              ) );
 //     _right_ee->setActiveJointsMask(active_joints);
