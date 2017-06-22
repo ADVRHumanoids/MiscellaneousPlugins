@@ -9,7 +9,6 @@ endif(COMMAND cmake_policy)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(MacroYCMInstallLibrary)
 
-# XBotCore
 project(MiscellaneousPlugin)
 
 # Add cmake dir and include custom macros
@@ -62,6 +61,13 @@ include_directories(include
 add_library(Homing SHARED src/Homing.cpp)
 target_link_libraries(Homing ${XCM_LIBRARIES})
 ycm_library_install(Homing 1 0 0)
+
+
+### BasicFsm
+add_library(BasicFsm SHARED src/BasicFsm.cpp)
+target_link_libraries(BasicFsm ${XCM_LIBRARIES})
+ycm_library_install(BasicFsm 1 0 0)
+
 
 ### OpenSoT IK
 if(${OpenSoT_FOUND})
