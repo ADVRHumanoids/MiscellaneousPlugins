@@ -21,6 +21,20 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     _model->getRobotState("home", _qhome);
 
+    for(unsigned int i = 0; i < _qhome.size(); ++i)
+    {
+        std::string name = _model->getJointByDofIndex(i)->getJointName();
+        double q_min, q_max;
+        _model->getJointByDofIndex(i)->getJointLimits(q_min, q_max);
+        std::cout<<name<<": "<<q_min<<" < "<<_qhome(i)<<" "<<" < "<<q_max;
+        if(_qhome(i) > q_max || _qhome(i) < q_min)
+            std::cout<<"    VALUE NOT IN LIMITS!!!!";
+        std::cout<<std::endl;
+    }
+
+
+    std::cout<<"home: "<<_qhome<<std::endl;
+
     _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
     _right_ref = shared_memory->get<Eigen::Affine3d>("w_T_right_ee");
 
