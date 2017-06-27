@@ -99,7 +99,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     /* Create autostack and set solver */
     _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims << _joint_vel_lims;
-    _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e10) );
+    _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
 
     /* Logger */
     Eigen::Affine3d left_pose, right_pose;
