@@ -7,6 +7,22 @@ REGISTER_XBOT_PLUGIN(OpenSotIk, MiscPlugins::OpenSotIk)
 
 namespace MiscPlugins {
 
+void printKDLFrame(const KDL::Frame& F)
+{
+        std::cout<<"    pose: ["<<F.p.x()<<", "<<F.p.y()<<", "<<F.p.z()<<"]"<<std::endl;
+        double qx, qy,qz,qw;
+        F.M.GetQuaternion(qx,qy,qz,qw);
+        std::cout<<"    quat: ["<<qx<<", "<<qy<<", "<<qz<<", "<<qw<<"]"<<std::endl;
+}  
+
+void setWorld(const KDL::Frame& l_sole_T_Waist, Eigen::VectorXd& q, XBot::ModelInterface::Ptr _model_ptr)
+{
+        _model_ptr->setFloatingBasePose(l_sole_T_Waist);
+
+        _model_ptr->getJointPosition(q);
+}
+
+  
 bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                     XBot::SharedMemory::Ptr shared_memory,
                                     XBot::RobotInterface::Ptr robot)
@@ -32,6 +48,30 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
         std::cout<<std::endl;
     }
 
+
+    _model->setJointPosition(_qhome);
+    _model->update();
+    
+    //Here we set the world in the middle of the feet
+    KDL::Frame l_sole_T_Waist;
+    this->_model->getPose("Waist", "l_sole", l_sole_T_Waist);
+    std::cout<<"l_sole_T_Waist:"<<std::endl;
+    printKDLFrame(l_sole_T_Waist);
+
+    l_sole_T_Waist.p.x(0.0);
+    l_sole_T_Waist.p.y(0.0);
+    
+    setWorld(l_sole_T_Waist, _qhome, _model);
+    _model->setJointPosition(this->_q);
+    _model->update();
+
+
+    KDL::Frame world_T_bl;
+    _model->getPose("Waist",world_T_bl);
+
+    std::cout<<"world_T_bl:"<<std::endl;
+    printKDLFrame(world_T_bl);
+    ///////////
 
     std::cout<<"home: "<<_qhome<<std::endl;
 
@@ -78,11 +118,10 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     /* Manipulability task */
     OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_right( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _right_ee) );
     OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_left( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _left_ee) );
-
-    /* Minimum effort task */
-    OpenSoT::tasks::velocity::MinimumEffort::Ptr min_effort( new OpenSoT::tasks::velocity::MinimumEffort(_qhome, *_model) );
-    min_effort->setLambda(0.01);
-
+    
+    
+    
+    
 
     /* Create joint limits & velocity limits */
     Eigen::VectorXd qmin, qmax, qdotmax;
@@ -97,8 +136,35 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(qdotlims, 0.001) );
 
+    /* Create cartesian tasks for both feet */
+    _l_sole.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_L_SOLE",
+                                                            _qhome,
+                                                            *_model,
+                                                            "l_sole",
+                                                            "world"
+                                                            ) );
+    _r_sole.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_R_SOLE",
+                                                            _qhome,
+                                                            *_model,
+                                                            "r_sole",
+                                                            "world"
+                                                            ) ); 
+    
+    _com.reset( new OpenSoT::tasks::velocity::CoM(_qhome,*_model)); 
+
+
+    
+    //            auto_stack = (l_sole + r_sole)/
+//                    (gaze + com)/
+//                    (l_wrist + r_wrist)/
+//                    (postural)<<joint_limits<<vel_limits;
+    
     /* Create autostack and set solver */
-    _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims << _joint_vel_lims;
+    _autostack = ( (_l_sole + _r_sole)/
+		   (_com)/
+		   (_right_ee + _left_ee)/
+		   (_postural) ) << _joint_lims << _joint_vel_lims;
+		   
     _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
 
     /* Logger */
@@ -151,6 +217,7 @@ void OpenSotIk::control_loop(double time, double period)
     /* Model update */
     _model->setJointPosition(_q);
     _model->update();
+    
 
     /* HACK: shape IK gain to avoid discontinuity */
     double alpha = 0;
