@@ -186,8 +186,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     
     // NOTE initializing world RT publisher with "world" pipe name
-    // _current_world = ...
-    // _world_pub.init("world");
+    if(_model->getFloatingBasePose( _current_world ))
+        _world_pub.init("world_odom");
 
     return true;
 }
@@ -223,8 +223,8 @@ void OpenSotIk::control_loop(double time, double period)
     _model->update();
     
     // NOTE compute current world and send it trough the Publisher RT
-    // _current_world = ....
-    // _world_pub.write(_current_world);
+    if(_model->getFloatingBasePose( _current_world ))
+        _world_pub.write(_current_world);
     
 
     /* HACK: shape IK gain to avoid discontinuity */
