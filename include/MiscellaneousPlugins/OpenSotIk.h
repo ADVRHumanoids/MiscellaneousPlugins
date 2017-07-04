@@ -22,6 +22,8 @@
 #define __MISC_PLUGINS_OPENSOT_IK_H__
 
 #include <XCM/XBotControlPlugin.h>
+#include <XBotCore-interfaces/XDomainCommunication.h>
+
 #include <OpenSoT/tasks/velocity/Cartesian.h>
 #include <OpenSoT/tasks/velocity/Postural.h>
 #include <OpenSoT/constraints/velocity/JointLimits.h>
@@ -54,7 +56,10 @@ private:
 
     XBot::RobotInterface::Ptr _robot;
     XBot::ModelInterface::Ptr _model;
-
+    
+    XBot::PublisherRT<Eigen::Affine3d> _world_pub;
+    Eigen::Affine3d _current_world;
+    
     XBot::SharedObject<Eigen::Affine3d> _left_ref, _right_ref;
 
     OpenSoT::tasks::velocity::Cartesian::Ptr _left_ee, _right_ee;

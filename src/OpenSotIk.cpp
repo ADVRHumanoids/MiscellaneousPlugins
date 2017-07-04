@@ -184,6 +184,10 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     _logger->add("time", 0.0);
 
+    
+    // NOTE initializing world RT publisher with "world" pipe name
+    // _current_world = ...
+    // _world_pub.init("world");
 
     return true;
 }
@@ -217,6 +221,10 @@ void OpenSotIk::control_loop(double time, double period)
     /* Model update */
     _model->setJointPosition(_q);
     _model->update();
+    
+    // NOTE compute current world and send it trough the Publisher RT
+    // _current_world = ....
+    // _world_pub.write(_current_world);
     
 
     /* HACK: shape IK gain to avoid discontinuity */
