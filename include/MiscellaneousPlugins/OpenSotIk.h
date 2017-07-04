@@ -31,6 +31,8 @@
 #include <OpenSoT/utils/AutoStack.h>
 #include <OpenSoT/tasks/velocity/CoM.h>
 
+#include <MiscellaneousPlugins/TransformMessage.h>
+
 namespace MiscPlugins {
 
 class OpenSotIk : public XBot::XBotControlPlugin {
@@ -56,10 +58,10 @@ private:
 
     XBot::RobotInterface::Ptr _robot;
     XBot::ModelInterface::Ptr _model;
-    
-    XBot::PublisherRT<Eigen::Affine3d> _world_pub;
+
+    XBot::PublisherRT<XBot::TransformMessage> _world_pub;
     Eigen::Affine3d _current_world;
-    
+
     XBot::SharedObject<Eigen::Affine3d> _left_ref, _right_ref;
 
     OpenSoT::tasks::velocity::Cartesian::Ptr _left_ee, _right_ee;
@@ -73,6 +75,8 @@ private:
     OpenSoT::solvers::QPOases_sot::Ptr _solver;
 
     XBot::MatLogger::Ptr _logger;
+
+    std::string _floating_base_name;
 
 };
 
