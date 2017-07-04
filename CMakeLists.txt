@@ -54,6 +54,7 @@ include_directories(include
                     ${XCM_INCLUDE_DIRS}
                     ${OpenSoT_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
+                    ../OdomPublisher/include
                     )
 
 
@@ -96,6 +97,9 @@ ycm_library_install(Poses 1 0 0)
 add_library(TorqueExample SHARED src/TorqueExample.cpp)
 target_link_libraries(TorqueExample ${XCM_LIBRARIES})
 ycm_library_install(TorqueExample 2 1 0)
+
+### OdomPublisher IO plugin
+add_subdirectory(OdomPublisher)
 
 if ( Xenomai_FOUND )
     set_xeno_flags(TorqueExample)
