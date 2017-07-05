@@ -224,10 +224,11 @@ void OpenSotIk::control_loop(double time, double period)
 
     // NOTE compute current world and send it trough the Publisher RT
     XBot::TransformMessage odom_message;
-    odom_message.parent_frame = std::string("world");
     _model->getFloatingBaseLink(_floating_base_name);
-    odom_message.child_frame = _floating_base_name;
+    odom_message.parent_frame = _floating_base_name; 
+    odom_message.child_frame = std::string("world_odom");
     if(_model->getFloatingBasePose( odom_message.pose )){
+	odom_message.pose = odom_message.pose.inverse();
         _world_pub.write(odom_message);
     }
 

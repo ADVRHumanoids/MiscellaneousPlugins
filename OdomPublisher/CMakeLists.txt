@@ -41,6 +41,7 @@ include(MacroYCMInstallLibrary)
 
 # find required packages
 find_package(XCM REQUIRED)
+find_package(catkin REQUIRED COMPONENTS tf_conversions)
 
 # XENOMAI
 set(ENABLE_XENO CACHE BOOL "ON")
@@ -64,7 +65,7 @@ if ( Xenomai_FOUND )
 endif()
 
 # linking
-target_link_libraries(${PROJECT_NAME} ${XCM_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${XCM_LIBRARIES} ${catkin_LIBRARIES})
 
 #install
 ycm_library_install(${PROJECT_NAME} 1 0 0)
