@@ -1,6 +1,6 @@
 #include <MiscellaneousPlugins/IkRosIoPlugin.h>
 
-REGISTER_XBOT_PLUGIN(IkRosSharedMemoryPublisher, MiscPlugins::IkRosRtPlugin)
+REGISTER_XBOT_PLUGIN(IkRosSMPub, MiscPlugins::IkRosRtPlugin)
 
 using namespace MiscPlugins;
 
