@@ -15,13 +15,6 @@ project(MiscellaneousPlugin)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 
-
-set(ENABLE_XENO CACHE BOOL "ON")
-if ( ${ENABLE_XENO} )
-   find_package(Xenomai)
-   find_package(RTnet)
-endif()
-
 # C++11
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -82,9 +75,9 @@ if(${catkin_FOUND})
     target_link_libraries(IkRosIo ${XCM_LIBRARIES} ${catkin_LIBRARIES})
     ycm_library_install(IkRosIo 1 0 0)
 
-    add_library(IkRosSharedMemoryPublisher SHARED src/IkRosSharedMemoryPublisher.cpp)
-    target_link_libraries(IkRosSharedMemoryPublisher ${XCM_LIBRARIES} ${catkin_LIBRARIES})
-    ycm_library_install(IkRosSharedMemoryPublisher 1 0 0)
+    add_library(IkRosSMPub SHARED src/IkRosSharedMemoryPublisher.cpp)
+    target_link_libraries(IkRosSMPub ${XCM_LIBRARIES} ${catkin_LIBRARIES})
+    ycm_library_install(IkRosSMPub 1 0 0)
 endif()
 
 ### Poses
@@ -98,6 +91,9 @@ target_link_libraries(TorqueExample ${XCM_LIBRARIES})
 ycm_library_install(TorqueExample 2 1 0)
 
 if ( Xenomai_FOUND )
+    set_xeno_flags(OpenSotIk)
+    set_xeno_flags(IkRosIo)
+    set_xeno_flags(IkRosSMPub)
     set_xeno_flags(TorqueExample)
 endif()
 

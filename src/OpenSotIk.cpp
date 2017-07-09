@@ -163,8 +163,10 @@ void OpenSotIk::control_loop(double time, double period)
 
 
     /* Set cartesian tasks reference */
-    _left_ee->setReference(_left_ref->matrix());
-    _right_ee->setReference(_right_ref->matrix());
+    _aux_matrix = _left_ref->matrix();
+    _left_ee->setReference(_aux_matrix);
+    _aux_matrix = _right_ref->matrix();
+    _right_ee->setReference(_aux_matrix);
 
     /* Log data */
     Eigen::Affine3d left_pose, right_pose;
