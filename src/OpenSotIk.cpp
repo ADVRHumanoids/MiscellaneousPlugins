@@ -42,14 +42,14 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _right_ref.reset(new Eigen::Affine3d);
 
     std::vector<bool> active_joints(_model->getJointNum(), true);
-    active_joints[_model->getDofIndex(_model->chain("torso").getJointId(0))] = false;
-    active_joints[_model->getDofIndex(_model->chain("torso").getJointId(1))] = false;
+//     active_joints[_model->getDofIndex(_model->chain("torso").getJointId(0))] = false;
+//     active_joints[_model->getDofIndex(_model->chain("torso").getJointId(1))] = false;
 
     /* Create cartesian tasks for both hands */
     _left_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_LEFT",
                                                             _qhome,
                                                             *_model,
-                                                            "LSoftHand",
+                                                            "arm1_8",
 //                                                             _model->chain("left_arm").getTipLinkName(),
                                                             "world"
                                                             ) );
@@ -58,7 +58,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
                                                              *_model,
-                                                             "RSoftHand",
+                                                             "arm2_7",
 //                                                              _model->chain("right_arm").getTipLinkName(),
                                                              "world"
                                                              ) );
@@ -90,7 +90,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _model->getVelocityLimits(qdotmax);
     double qdotmax_min = qdotmax.minCoeff();
     Eigen::VectorXd qdotlims(_qhome.size()); qdotlims.setConstant(_qhome.size(), qdotmax_min);
-    qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
+//     qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
     _final_qdot_lim = 2.0;
 
     _joint_lims.reset( new OpenSoT::constraints::velocity::JointLimits(_qhome, qmax, qmin) );
