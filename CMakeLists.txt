@@ -85,16 +85,16 @@ add_library(Poses SHARED src/Poses.cpp)
 target_link_libraries(Poses ${XCM_LIBRARIES})
 ycm_library_install(Poses 1 0 0)
 
-### TorqueExample
-add_library(TorqueExample SHARED src/TorqueExample.cpp)
-target_link_libraries(TorqueExample ${XCM_LIBRARIES})
-ycm_library_install(TorqueExample 2 1 0)
+### TorqueCloud
+add_library(TorqueCloud SHARED src/TorqueCloud.cpp)
+target_link_libraries(TorqueCloud ${XCM_LIBRARIES})
+ycm_library_install(TorqueCloud 1 0 0)
 
 if ( Xenomai_FOUND )
     set_xeno_flags(OpenSotIk)
     set_xeno_flags(IkRosIo)
     set_xeno_flags(IkRosSMPub)
-    set_xeno_flags(TorqueExample)
+    set_xeno_flags(TorqueClou)
 endif()
 
 include(AddUninstallTarget)

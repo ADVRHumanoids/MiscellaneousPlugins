@@ -24,7 +24,7 @@
 
 namespace MiscPlugins {
 
-class TorqueExample : public XBot::XBotControlPlugin {
+class TorqueCloud : public XBot::XBotControlPlugin {
 
 public:
 

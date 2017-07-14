@@ -1,10 +1,10 @@
-#include <MiscellaneousPlugins/TorqueExample.h>
+#include <MiscellaneousPlugins/TorqueCloud.h>
 
 
-REGISTER_XBOT_PLUGIN(TorqueExample, MiscPlugins::TorqueExample)
+REGISTER_XBOT_PLUGIN(TorqueCloud, MiscPlugins::TorqueCloud)
 
 
-bool MiscPlugins::TorqueExample::init_control_plugin(std::string path_to_config_file, 
+bool MiscPlugins::TorqueCloud::init_control_plugin(std::string path_to_config_file, 
                                                      XBot::SharedMemory::Ptr shared_memory, 
                                                      XBot::RobotInterface::Ptr robot)
 {
@@ -28,7 +28,7 @@ bool MiscPlugins::TorqueExample::init_control_plugin(std::string path_to_config_
     return true;
 }
 
-void MiscPlugins::TorqueExample::control_loop(double time, double period)
+void MiscPlugins::TorqueCloud::control_loop(double time, double period)
 {
    
     
@@ -49,13 +49,13 @@ void MiscPlugins::TorqueExample::control_loop(double time, double period)
             
         }
         
-        if( current_command.str() == "gcomp"){
+       // if( current_command.str() == "gcomp"){
             // get starting position
             _robot->getStiffness(_k0);
             _robot->getDamping(_d0);
             _robot->getMotorPosition(_q0);
             
-        }
+       // }
         
         if( current_command.str() == "remove_gcomp"){
             // get starting position
@@ -100,7 +100,7 @@ void MiscPlugins::TorqueExample::control_loop(double time, double period)
         return;
     }
     
-    if( current_command.str() == "gcomp"){
+    //if( current_command.str() == "gcomp"){
         // command tau = imp ctrl (low low gains) + g(q), qref = homing
         
         double alpha = (time - _starting_time)/4.3;
@@ -126,23 +126,23 @@ void MiscPlugins::TorqueExample::control_loop(double time, double period)
         
         
         return;
-    }
+    //}
     
     
     
 }
 
-void MiscPlugins::TorqueExample::on_start(double time)
+void MiscPlugins::TorqueCloud::on_start(double time)
 {
     
 }
 
-void MiscPlugins::TorqueExample::on_stop(double time)
+void MiscPlugins::TorqueCloud::on_stop(double time)
 {
     
 }
 
-bool MiscPlugins::TorqueExample::close()
+bool MiscPlugins::TorqueCloud::close()
 {
 
 }
