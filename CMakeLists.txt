@@ -40,6 +40,7 @@ endif()
 find_package(XCM REQUIRED)
 find_package(OpenSoT QUIET)
 find_package(iDynTree QUIET)
+find_package(ADVR_ROS QUIET)
 find_package(catkin QUIET COMPONENTS roscpp geometry_msgs)
 
 # include
@@ -47,6 +48,7 @@ include_directories(include
                     ${XCM_INCLUDE_DIRS}
                     ${OpenSoT_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
+                    ${ADVR_ROS_INCLUDE_DIRS}
                     )
 
 
@@ -71,6 +73,7 @@ endif()
 
 ### Ros ik IO plugin
 if(${catkin_FOUND})
+
     add_library(IkRosIo SHARED src/IkRosIoPlugin.cpp)
     target_link_libraries(IkRosIo ${XCM_LIBRARIES} ${catkin_LIBRARIES})
     ycm_library_install(IkRosIo 1 0 0)
@@ -78,6 +81,16 @@ if(${catkin_FOUND})
     add_library(IkRosSMPub SHARED src/IkRosSharedMemoryPublisher.cpp)
     target_link_libraries(IkRosSMPub ${XCM_LIBRARIES} ${catkin_LIBRARIES})
     ycm_library_install(IkRosSMPub 1 0 0)
+    
+#     if(${ADVR_ROS_FOUND})
+    
+    add_library(FHRosIo SHARED src/FHRosIoPlugin.cpp)
+    target_link_libraries(FHRosIo ${XCM_LIBRARIES} ${catkin_LIBRARIES} ${ADVR_ROS_LIBRARIES})
+    ycm_library_install(FHRosIo 1 0 0)
+
+        
+#      endif()
+    
 endif()
 
 ### Poses
@@ -94,6 +107,8 @@ if ( Xenomai_FOUND )
     set_xeno_flags(OpenSotIk)
     set_xeno_flags(IkRosIo)
     set_xeno_flags(IkRosSMPub)
+    set_xeno_flags(FHRosIoPlugin)
+    set_xeno_flags(FHRosSMPub)
     set_xeno_flags(TorqueExample)
 endif()
 
