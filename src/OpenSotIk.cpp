@@ -128,13 +128,14 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _model->getJointLimits(qmin, qmax);
     _model->getVelocityLimits(qdotmax);
     double qdotmax_min = qdotmax.minCoeff();
-    Eigen::VectorXd qdotlims(_qhome.size()); qdotlims.setConstant(_qhome.size(), qdotmax_min);
+    Eigen::VectorXd qdotlims(_qhome.size()); qdotlims.setConstant(_qhome.size(),1.0);// qdotmax_min);
     qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
     _final_qdot_lim = 2.0;
 
     _joint_lims.reset( new OpenSoT::constraints::velocity::JointLimits(_qhome, qmax, qmin) );
 
     _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(qdotlims, 0.001) );
+
 
     /* Create cartesian tasks for both feet */
     _l_sole.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_L_SOLE",
@@ -164,6 +165,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 		   (_com)/
 		   (_right_ee + _left_ee)/
 		   (_postural) ) << _joint_lims << _joint_vel_lims;
+    _autostack->update(_qhome);               
 
     _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
 
@@ -188,6 +190,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     // NOTE initializing world RT publisher with "world" pipe name
     if(_model->getFloatingBasePose( _current_world ))
         _world_pub.init("world_odom");
+    
+    aux_matrix.resize(4,4);
 
     return true;
 }
@@ -211,9 +215,10 @@ void OpenSotIk::on_start(double time)
     _postural->setLambda(0);
 
     _start_time = time;
-
-    std::cout << "OpenSotIkTestPlugin STARTED!\nInitial q is " << _q.transpose() << std::endl;
-    std::cout << "Home q is " << _qhome.transpose() << std::endl;
+    
+    std::cout << "OpenSotIkTestPlugin STARTED!"<<std::endl;
+    for(unsigned int i = 0; i < _q.size(); ++i)
+        std::cout<<"q sensed "<<i<<": "<<_q[i]<<"    expected from home: "<<_qhome[i]<<" --> "<<_model->getJointByDofIndex(i)->getJointName()<<std::endl;
 }
 
 void OpenSotIk::control_loop(double time, double period)
@@ -221,8 +226,8 @@ void OpenSotIk::control_loop(double time, double period)
     /* Model update */
     _model->setJointPosition(_q);
     _model->update();
-
-    // NOTE compute current world and send it trough the Publisher RT
+// 
+//     // NOTE compute current world and send it trough the Publisher RT
     XBot::TransformMessage odom_message;
     _model->getFloatingBaseLink(_floating_base_name);
     odom_message.parent_frame = _floating_base_name; 
@@ -231,9 +236,9 @@ void OpenSotIk::control_loop(double time, double period)
 	odom_message.pose = odom_message.pose.inverse();
         _world_pub.write(odom_message);
     }
-
-
-    /* HACK: shape IK gain to avoid discontinuity */
+// 
+// 
+//     /* HACK: shape IK gain to avoid discontinuity */
     double alpha = 0;
     alpha = (time - _start_time)/100;
     alpha = alpha > 1 ? 1 : alpha;
@@ -242,31 +247,34 @@ void OpenSotIk::control_loop(double time, double period)
     _right_ee->setLambda(alpha);
     _postural->setLambda(alpha);
 
+// 
+//     /* Set cartesian tasks reference */
+    aux_matrix = _left_ref->matrix();
+    _left_ee->setReference(aux_matrix);
+    aux_matrix= _right_ref->matrix();
+    _right_ee->setReference(aux_matrix);
+    
 
-    /* Set cartesian tasks reference */
-    _left_ee->setReference(_left_ref->matrix());
-    _right_ee->setReference(_right_ref->matrix());
-
-    /* Log data */
-    Eigen::Affine3d left_pose, right_pose;
-    _model->getPose(_left_ee->getDistalLink(), left_pose);
-    _model->getPose(_right_ee->getDistalLink(), right_pose);
-
-    _logger->add("left_ref_pos", _left_ref->translation());
-    _logger->add("right_ref_pos", _right_ref->translation());
-    _logger->add("left_actual_pos", left_pose.translation());
-    _logger->add("right_actual_pos", right_pose.translation());
-
-    _logger->add("left_ref_or", _left_ref->linear());
-    _logger->add("right_ref_or", _right_ref->linear());
-    _logger->add("left_actual_or", left_pose.linear());
-    _logger->add("right_actual_or", right_pose.linear());
-    _logger->add("computed_q", _q);
-
-    _logger->add("time", time);
+//     /* Log data */
+  
+//     _model->getPose(_left_ee->getDistalLink(), left_pose);
+//     _model->getPose(_right_ee->getDistalLink(), right_pose);
+// 
+//     _logger->add("left_ref_pos", _left_ref->translation());
+//     _logger->add("right_ref_pos", _right_ref->translation());
+//     _logger->add("left_actual_pos", left_pose.translation());
+//     _logger->add("right_actual_pos", right_pose.translation());
+// 
+//     _logger->add("left_ref_or", _left_ref->linear());
+//     _logger->add("right_ref_or", _right_ref->linear());
+//     _logger->add("left_actual_or", left_pose.linear());
+//     _logger->add("right_actual_or", right_pose.linear());
+//     _logger->add("computed_q", _q);
+// 
+//     _logger->add("time", time);
 
 
-    /* Stack update and solve */
+//     /* Stack update and solve */
     _autostack->update(_q);
 
     _dq.setZero(_model->getJointNum());
@@ -276,7 +284,7 @@ void OpenSotIk::control_loop(double time, double period)
         return;
     }
 
-    _logger->add("computed_qdot", _dq/period);
+    //_logger->add("computed_qdot", _dq/period);
 
     /* Update q */
     _q += _dq;

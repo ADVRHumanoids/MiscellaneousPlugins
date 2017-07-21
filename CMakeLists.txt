@@ -102,6 +102,8 @@ ycm_library_install(TorqueExample 2 1 0)
 add_subdirectory(OdomPublisher)
 
 if ( Xenomai_FOUND )
+    set_xeno_flags(IkRosIo)
+    set_xeno_flags(OpenSotIk)
     set_xeno_flags(TorqueExample)
 endif()
 
