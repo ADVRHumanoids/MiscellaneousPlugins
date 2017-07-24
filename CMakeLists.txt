@@ -15,6 +15,13 @@ project(MiscellaneousPlugin)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 
+
+set(ENABLE_XENO CACHE BOOL "ON")
+if ( ${ENABLE_XENO} )
+   find_package(Xenomai)
+   find_package(RTnet)
+endif()
+
 # C++11
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -49,6 +56,7 @@ include_directories(include
                     ${OpenSoT_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
                     ${ADVR_ROS_INCLUDE_DIRS}
+		    ../OdomPublisher/include
                     )
 
 
@@ -102,6 +110,9 @@ ycm_library_install(Poses 1 0 0)
 add_library(TorqueExample SHARED src/TorqueExample.cpp)
 target_link_libraries(TorqueExample ${XCM_LIBRARIES})
 ycm_library_install(TorqueExample 2 1 0)
+
+### OdomPublisher IO plugin
+add_subdirectory(OdomPublisher)
 
 if ( Xenomai_FOUND )
     set_xeno_flags(OpenSotIk)

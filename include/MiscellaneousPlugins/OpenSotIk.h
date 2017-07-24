@@ -22,11 +22,16 @@
 #define __MISC_PLUGINS_OPENSOT_IK_H__
 
 #include <XCM/XBotControlPlugin.h>
+#include <XBotCore-interfaces/XDomainCommunication.h>
+
 #include <OpenSoT/tasks/velocity/Cartesian.h>
 #include <OpenSoT/tasks/velocity/Postural.h>
 #include <OpenSoT/constraints/velocity/JointLimits.h>
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
 #include <OpenSoT/utils/AutoStack.h>
+#include <OpenSoT/tasks/velocity/CoM.h>
+
+#include <MiscellaneousPlugins/TransformMessage.h>
 
 namespace MiscPlugins {
 
@@ -48,25 +53,36 @@ public:
 private:
 
     double _start_time, _final_qdot_lim;
+    
+    Eigen::MatrixXd aux_matrix;
 
     Eigen::VectorXd _q0, _q, _dq, _qhome;
 
     XBot::RobotInterface::Ptr _robot;
     XBot::ModelInterface::Ptr _model;
 
+    XBot::PublisherRT<XBot::TransformMessage> _world_pub;
+    Eigen::Affine3d _current_world;
+
     XBot::SharedObject<Eigen::Affine3d> _left_ref, _right_ref;
     
     Eigen::MatrixXd _aux_matrix;
 
     OpenSoT::tasks::velocity::Cartesian::Ptr _left_ee, _right_ee;
+    OpenSoT::tasks::velocity::Cartesian::Ptr _l_sole, _r_sole;
+    OpenSoT::tasks::velocity::CoM::Ptr _com;
     OpenSoT::tasks::velocity::Postural::Ptr _postural;
     OpenSoT::constraints::velocity::JointLimits::Ptr _joint_lims;
     OpenSoT::constraints::velocity::VelocityLimits::Ptr _joint_vel_lims;
 
     OpenSoT::AutoStack::Ptr _autostack;
     OpenSoT::solvers::QPOases_sot::Ptr _solver;
+    
+    Eigen::Affine3d left_pose, right_pose;
 
     XBot::MatLogger::Ptr _logger;
+
+    std::string _floating_base_name;
 
 };
 
