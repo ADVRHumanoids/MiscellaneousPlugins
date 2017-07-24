@@ -83,7 +83,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 //                                                             _model->chain("left_arm").getTipLinkName(),
                                                             "world"
                                                             ) );
-     //_left_ee->setActiveJointsMask(active_joints);
+     _left_ee->setActiveJointsMask(active_joints);
 
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
@@ -92,15 +92,17 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 //                                                              _model->chain("right_arm").getTipLinkName(),
                                                              "world"
                                                              ) );
-//     _right_ee->setActiveJointsMask(active_joints);
+    _right_ee->setActiveJointsMask(active_joints);
 
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
-    Eigen::VectorXd weight;
-    weight.setOnes((_model->getJointNum()));
-    weight(0) = 100;
-//     _postural->setLambda(0.0);
-    _postural->setWeight(weight.asDiagonal());
+//     Eigen::VectorXd weight;
+//     weight.setOnes((_model->getJointNum()));
+//     weight(0) = 100;
+    _postural->setLambda(0.0);
+//     _postural->setWeight(weight.asDiagonal());
+    
+    _postural->setActiveJointsMask(active_joints);
 
     /* Create min acc task */
     OpenSoT::tasks::velocity::MinimizeAcceleration::Ptr min_acc( new OpenSoT::tasks::velocity::MinimizeAcceleration(_qhome) );
@@ -118,8 +120,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _model->getJointLimits(qmin, qmax);
     _model->getVelocityLimits(qdotmax);
     double qdotmax_min = qdotmax.minCoeff();
-    Eigen::VectorXd qdotlims(_qhome.size()); qdotlims.setConstant(_qhome.size(),1.0);// qdotmax_min);
-    qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
+    Eigen::VectorXd qdotlims(_qhome.size()); qdotlims.setConstant(_qhome.size(),2.0); // 1.0); // qdotmax_min);
+//     qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
     _final_qdot_lim = 2.0;
 
     _joint_lims.reset( new OpenSoT::constraints::velocity::JointLimits(_qhome, qmax, qmin) );
@@ -142,6 +144,14 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                             ) );
 
     _com.reset( new OpenSoT::tasks::velocity::CoM(_qhome,*_model));
+    //Eigen::Matrix3d W = Eigen::Matrix3d::Identity();
+    //W(2,2) = 0.0;
+    //_com->setWeight(W);
+    
+    _com->setActiveJointsMask(active_joints);
+    //_com->setLambda(1.0);
+    
+    
 
 
 
@@ -165,6 +175,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _logger->add("right_ref_pos", _right_ref->translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
+    
+    _logger->add("com", _com->getActualPosition());
 
     _logger->add("left_ref_or", _left_ref->linear());
     _logger->add("right_ref_or", _right_ref->linear());
@@ -254,6 +266,8 @@ void OpenSotIk::control_loop(double time, double period)
     _logger->add("right_ref_pos", _right_ref->translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
+    
+    _logger->add("com", _com->getActualPosition());
 
     _logger->add("left_ref_or", _left_ref->linear());
     _logger->add("right_ref_or", _right_ref->linear());
