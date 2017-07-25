@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2017 IIT-ADVR
- * Author: Arturo Laurenzi, Luca Muratore
- * email:  arturo.laurenzi@iit.it, luca.muratore@iit.it
+ * Author: Arturo Laurenzi, Luca Muratore , Giuseppe Rigano
+ * email:  arturo.laurenzi@iit.it, luca.muratore@iit.it, giuseppe.rigano@iit.it
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,6 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>
 */
 
+
 #ifndef __MISC_PLUGINS_ROS_COMM_IO_PLUGIN_H__
 #define __MISC_PLUGINS_ROS_COMM_IO_PLUGIN_H__
 
@@ -26,6 +27,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <std_msgs/Float64.h>
 
 namespace MiscPlugins {
 
@@ -42,8 +44,15 @@ private:
     std::vector<std::string> _topic_names, _pipe_names;
     std::vector<ros::Subscriber> _sub;
     std::vector<XBot::PublisherNRT<Eigen::Affine3d>> _pub_nrt;
+    
+    std::vector<std::string> _grasp_topic_names, _grasp_pipe_names;
+    std::vector<XBot::PublisherNRT<double>> _grasp_pub_nrt;
+    std::vector<ros::Subscriber> _grasp_sub;
 
     void callback(geometry_msgs::PoseStampedConstPtr msg, int id);
+    
+    
+    void grasp_callback(std_msgs::Float64::ConstPtr msg, int id);
 
 
 
@@ -66,6 +75,11 @@ private:
     std::vector<std::string> _sharedobj_names, _pipe_names;
     std::vector<XBot::SharedObject<Eigen::Affine3d>> _shared_obj;
     std::vector<XBot::SubscriberRT<Eigen::Affine3d>> _sub_rt;
+    
+    //_grasp
+    std::vector<std::string> _sharedobj_grasp_names, _pipe_grasp_names;
+    std::vector<XBot::SharedObject<double>> _grasp_shared_obj;
+    std::vector<XBot::SubscriberRT<double>> _grasp_sub_rt;
 
 };
 

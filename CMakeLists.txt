@@ -71,6 +71,11 @@ if(${OpenSoT_FOUND})
     ycm_library_install(OpenSotIk 1 0 0)
 endif()
 
+### Grasp
+add_library(Grasp SHARED src/Grasp.cpp)
+target_link_libraries(Grasp ${XCM_LIBRARIES})
+ycm_library_install(Grasp 1 0 0)
+
 ### Ros ik IO plugin
 if(${catkin_FOUND})
 
@@ -105,6 +110,7 @@ ycm_library_install(TorqueExample 2 1 0)
 
 if ( Xenomai_FOUND )
     set_xeno_flags(OpenSotIk)
+    set_xeno_flags(Grasp)
     set_xeno_flags(IkRosIo)
     set_xeno_flags(IkRosSMPub)
     set_xeno_flags(FHRosIoPlugin)
