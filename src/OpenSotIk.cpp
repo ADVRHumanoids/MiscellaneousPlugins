@@ -25,15 +25,22 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     {
         std::string name = _model->getJointByDofIndex(i)->getJointName();
         double q_min, q_max;
+        
         _model->getJointByDofIndex(i)->getJointLimits(q_min, q_max);
+        
         std::cout<<name<<": "<<q_min<<" < "<<_qhome(i)<<" "<<" < "<<q_max;
-        if(_qhome(i) > q_max || _qhome(i) < q_min)
+        
+        if(_qhome(i) > q_max || _qhome(i) < q_min) {
             std::cout<<"    VALUE NOT IN LIMITS!!!!";
+        }
+        
         std::cout<<std::endl;
     }
+    
+    _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>(2*3.1415*0.2, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
 
 
-    std::cout<<"home: "<<_qhome<<std::endl;
+    std::cout << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome << std::endl;
 
     _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
     _right_ref = shared_memory->get<Eigen::Affine3d>("w_T_right_ee");
@@ -50,8 +57,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                             _qhome,
                                                             *_model,
                                                             "arm1_8",
-//                                                             _model->chain("left_arm").getTipLinkName(),
-                                                            "world"
+                                                            _model->chain("torso").getTipLinkName()
+//                                                             "world"
                                                             ) );
      //_left_ee->setActiveJointsMask(active_joints);
 
@@ -59,8 +66,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                              _qhome,
                                                              *_model,
                                                              "arm2_7",
-//                                                              _model->chain("right_arm").getTipLinkName(),
-                                                             "world"
+                                                             _model->chain("torso").getTipLinkName()
+//                                                              "world"
                                                              ) );
 //     _right_ee->setActiveJointsMask(active_joints);
 
@@ -73,15 +80,17 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _postural->setWeight(weight.asDiagonal());
 
     /* Create min acc task */
-    OpenSoT::tasks::velocity::MinimizeAcceleration::Ptr min_acc( new OpenSoT::tasks::velocity::MinimizeAcceleration(_qhome) );
+//     OpenSoT::tasks::velocity::MinimizeAcceleration::Ptr min_acc( new OpenSoT::tasks::velocity::MinimizeAcceleration(_qhome) );
 
     /* Manipulability task */
-    OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_right( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _right_ee) );
-    OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_left( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _left_ee) );
+//     OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_right( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _right_ee) );
+//     OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_left( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _left_ee) );
 
     /* Minimum effort task */
-    OpenSoT::tasks::velocity::MinimumEffort::Ptr min_effort( new OpenSoT::tasks::velocity::MinimumEffort(_qhome, *_model) );
-    min_effort->setLambda(0.01);
+//     OpenSoT::tasks::velocity::MinimumEffort::Ptr min_effort( new OpenSoT::tasks::velocity::MinimumEffort(_qhome, *_model) );
+//     min_effort->setLambda(0.01);
+    
+    // NOTE min acc - manipulapility - min effort NOT USED
 
 
     /* Create joint limits & velocity limits */
@@ -98,7 +107,9 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(qdotlims, 0.001) );
 
     /* Create autostack and set solver */
+    // NOTE MoT is wonderful
     _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims << _joint_vel_lims;
+    
     _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
 
     /* Logger */
@@ -129,8 +140,8 @@ void OpenSotIk::on_start(double time)
     _model->getJointPosition(_q);
 
 
-    _model->getPose(_left_ee->getDistalLink(), *_left_ref);
-    _model->getPose(_right_ee->getDistalLink(), *_right_ref);
+    _model->getPose(_left_ee->getDistalLink(), _left_ee->getBaseLink(), *_left_ref);
+    _model->getPose(_right_ee->getDistalLink(), _left_ee->getBaseLink(), *_right_ref);
 
     /* Set cartesian tasks reference */
     _left_ee->setReference(_left_ref->matrix());
@@ -141,8 +152,10 @@ void OpenSotIk::on_start(double time)
     _postural->setLambda(0);
 
     _start_time = time;
+    
+    _filter_q.reset(_q);
 
-    std::cout << "OpenSotIkTestPlugin STARTED!\nInitial q is " << _q.transpose() << std::endl;
+    std::cout << "OpenSotIkPlugin STARTED!\nInitial q is " << _q.transpose() << std::endl;
     std::cout << "Home q is " << _qhome.transpose() << std::endl;
 }
 
@@ -204,7 +217,9 @@ void OpenSotIk::control_loop(double time, double period)
 
 
     /* Send command to motors */
-    _robot->setReferenceFrom(*_model, XBot::Sync::Position);
+//     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
+    _model->getJointPosition(_q_ref);
+    _robot->setPositionReference(_filter_q.process(_q_ref));
     _robot->move();
 
 }

@@ -22,6 +22,8 @@
 #define __MISC_PLUGINS_OPENSOT_IK_H__
 
 #include <XCM/XBotControlPlugin.h>
+#include <XBotInterface/Utils.h>
+
 #include <OpenSoT/tasks/velocity/Cartesian.h>
 #include <OpenSoT/tasks/velocity/Postural.h>
 #include <OpenSoT/constraints/velocity/JointLimits.h>
@@ -49,7 +51,9 @@ private:
 
     double _start_time, _final_qdot_lim;
 
-    Eigen::VectorXd _q0, _q, _dq, _qhome;
+    Eigen::VectorXd _q0, _q, _dq, _qhome, _q_ref;
+    
+    XBot::Utils::SecondOrderFilter<Eigen::VectorXd> _filter_q;
 
     XBot::RobotInterface::Ptr _robot;
     XBot::ModelInterface::Ptr _model;
