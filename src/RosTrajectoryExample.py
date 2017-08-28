@@ -24,7 +24,7 @@ if __name__ == '__main__':
         msg.pose.orientation.z = 0
         msg.pose.orientation.w = 0
 
-        pub_left.publish(msg)
+        #pub_left.publish(msg)
 
         msg = PoseStamped()
         msg.pose.position.x = 1.0
