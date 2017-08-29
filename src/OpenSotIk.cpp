@@ -37,7 +37,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
         std::cout<<std::endl;
     }
     
-    _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>( (2*3.1415) * 0.5, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
+//     _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>( (2*3.1415) * 0.5, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
 
 
     std::cout << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome << std::endl;
@@ -100,13 +100,14 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _model->getJointLimits(qmin, qmax);
     _model->getVelocityLimits(qdotmax);
     double qdotmax_min = qdotmax.minCoeff();
-    Eigen::VectorXd qdotlims(_qhome.size()); qdotlims.setConstant(_qhome.size(), qdotmax_min);
+    Eigen::VectorXd qdotlims(_qhome.size()); 
+    qdotlims.setConstant(_qhome.size(), qdotmax_min);
 //     qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
-    _final_qdot_lim = 2.0;
 
     _joint_lims.reset( new OpenSoT::constraints::velocity::JointLimits(_qhome, qmax, qmin) );
 
-    _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(qdotlims, 0.001) );
+    _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(1.0, 0.001, _qhome.size()));
+//     _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(qdotlims, 0.001) );
 
     /* Create autostack and set solver */
     // NOTE MoT is wonderful
@@ -155,7 +156,7 @@ void OpenSotIk::on_start(double time)
 
     _start_time = time;
     
-    _filter_q.reset(_q);
+//     _filter_q.reset(_q);
 
     std::cout << "OpenSotIkPlugin STARTED!\nInitial q is " << _q.transpose() << std::endl;
     std::cout << "Home q is " << _qhome.transpose() << std::endl;
