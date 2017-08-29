@@ -27,6 +27,8 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <eigen_conversions/eigen_msg.h>
 
+#include <XBotInterface/Utils.h>
+
 namespace MiscPlugins {
 
 class IkRosIoPlugin : public XBot::IOPlugin {
@@ -57,15 +59,22 @@ public:
     virtual bool init_control_plugin(std::string path_to_config_file,
                                      XBot::SharedMemory::Ptr shared_memory,
                                      XBot::RobotInterface::Ptr robot);
-    virtual void on_start(double time){}
+    virtual void on_start(double time);
     virtual void control_loop(double time, double period);
     virtual bool close(){}
 
 private:
+    
+    XBot::RobotInterface::Ptr _robot;
 
     std::vector<std::string> _sharedobj_names, _pipe_names;
     std::vector<XBot::SharedObject<Eigen::Affine3d>> _shared_obj;
     std::vector<XBot::SubscriberRT<Eigen::Affine3d>> _sub_rt;
+    
+    XBot::Utils::SecondOrderFilter<Eigen::VectorXd> _filter;
+    
+    Eigen::Affine3d _pose_raw, _pose_ref;
+
 
 };
 
