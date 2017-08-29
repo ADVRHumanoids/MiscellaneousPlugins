@@ -37,7 +37,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
         std::cout<<std::endl;
     }
     
-    _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>(2*3.1415*0.2, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
+    _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>( (2*3.1415) * 0.5, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
 
 
     std::cout << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome << std::endl;
@@ -73,11 +73,13 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
-    Eigen::VectorXd weight;
-    weight.setOnes((_model->getJointNum()));
-    weight(0) = 100;
+//     Eigen::VectorXd weight;
+//     weight.setOnes((_model->getJointNum()));
+//     weight(0) = 100;
+//     _postural->setWeight(weight.asDiagonal());
+    
+    
 //     _postural->setLambda(0.0);
-    _postural->setWeight(weight.asDiagonal());
 
     /* Create min acc task */
 //     OpenSoT::tasks::velocity::MinimizeAcceleration::Ptr min_acc( new OpenSoT::tasks::velocity::MinimizeAcceleration(_qhome) );
@@ -217,9 +219,9 @@ void OpenSotIk::control_loop(double time, double period)
 
 
     /* Send command to motors */
-//     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
-    _model->getJointPosition(_q_ref);
-    _robot->setPositionReference(_filter_q.process(_q_ref));
+    _robot->setReferenceFrom(*_model, XBot::Sync::Position);
+// //     _model->getJointPosition(_q_ref);
+// //     _robot->setPositionReference(_filter_q.process(_q_ref));
     _robot->move();
 
 }
