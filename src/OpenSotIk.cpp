@@ -217,6 +217,9 @@ void OpenSotIk::control_loop(double time, double period)
 
     /* Update q */
     _q += _dq;
+    
+    _robot->model().computeGravityCompensation(_tau);
+    _robot->setEffortReference(_tau);
 
 
     /* Send command to motors */
