@@ -241,7 +241,7 @@ void OpenSotIk::control_loop(double time, double period)
     if( current_command.str() == "stiffness_regulation") {
         
         // NOTE alpha
-        double alpha = 80.0;
+        double alpha = 1000.0;
         
         _robot->getMotorPosition(_qm);
         _qerror = (_qm - _q);
@@ -262,7 +262,7 @@ void OpenSotIk::control_loop(double time, double period)
         
         _kref = _k0 + _kv;
         
-//         _robot->setStiffness(_kref);
+        _robot->setStiffness(_kref);
             
         _logger->add("kv", _kv);
         _logger->add("k_ref", _kref);
