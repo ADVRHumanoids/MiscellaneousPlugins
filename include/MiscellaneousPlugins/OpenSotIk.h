@@ -51,7 +51,7 @@ private:
 
     double _start_time, _final_qdot_lim;
 
-    Eigen::VectorXd _q0, _q, _dq, _qhome, _q_ref, _tau;
+    Eigen::VectorXd _q0, _q, _dq, _qhome, _q_ref, _tau, _k0, _kv, _kref, _qm, _qerror;
     
     XBot::Utils::SecondOrderFilter<Eigen::VectorXd> _filter_q;
 

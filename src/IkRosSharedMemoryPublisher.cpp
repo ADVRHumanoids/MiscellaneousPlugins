@@ -27,6 +27,9 @@ bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::S
 void IkRosRtPlugin::on_start(double time)
 {
     Eigen::Affine3d ree_start_pose;
+    
+    std::cout << _robot->model().chain("right_arm").getTipLinkName() << "---" << std::endl;
+    
     _robot->model().getPose(_robot->model().chain("right_arm").getTipLinkName(), 
                             _robot->model().chain("torso").getTipLinkName(), 
                             ree_start_pose); 

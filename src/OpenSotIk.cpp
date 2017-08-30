@@ -11,16 +11,21 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                     XBot::SharedMemory::Ptr shared_memory,
                                     XBot::RobotInterface::Ptr robot)
 {
+    // logger
     _logger = XBot::MatLogger::getLogger("/tmp/OpenSotIk_logger");
 
+    // robot and model 
     _robot = robot;
     _model = XBot::ModelInterface::getModel(path_to_config_file);
     
+    // starting position
     _robot->sense();
     _robot->model().getJointPosition(_q0);
 
+    // home from SRDF
     _model->getRobotState("home", _qhome);
 
+    // limits check for IK
     for(unsigned int i = 0; i < _qhome.size(); ++i)
     {
         std::string name = _model->getJointByDofIndex(i)->getJointName();
@@ -39,15 +44,17 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     
 //     _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>( (2*3.1415) * 0.5, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
 
-
+    // info
     std::cout << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome << std::endl;
 
+    // read shared memory data for ee pose
     _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
     _right_ref = shared_memory->get<Eigen::Affine3d>("w_T_right_ee");
 
     _left_ref.reset(new Eigen::Affine3d);
     _right_ref.reset(new Eigen::Affine3d);
 
+    // active joint mask
     std::vector<bool> active_joints(_model->getJointNum(), true);
 //     active_joints[_model->getDofIndex(_model->chain("torso").getJointId(0))] = false;
 //     active_joints[_model->getDofIndex(_model->chain("torso").getJointId(1))] = false;
@@ -58,7 +65,6 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                             *_model,
                                                             "arm1_8",
                                                             _model->chain("torso").getTipLinkName()
-//                                                             "world"
                                                             ) );
      //_left_ee->setActiveJointsMask(active_joints);
 
@@ -67,12 +73,14 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                              *_model,
                                                              "arm2_7",
                                                              _model->chain("torso").getTipLinkName()
-//                                                              "world"
                                                              ) );
 //     _right_ee->setActiveJointsMask(active_joints);
 
+    
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
+    
+    
 //     Eigen::VectorXd weight;
 //     weight.setOnes((_model->getJointNum()));
 //     weight(0) = 100;
@@ -99,7 +107,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     Eigen::VectorXd qmin, qmax, qdotmax;
     _model->getJointLimits(qmin, qmax);
     _model->getVelocityLimits(qdotmax);
-    double qdotmax_min = qdotmax.minCoeff();
+    double qdotmax_min = qdotmax.minCoeff();  // NOTE too high
     Eigen::VectorXd qdotlims(_qhome.size()); 
     qdotlims.setConstant(_qhome.size(), qdotmax_min);
 //     qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
@@ -112,7 +120,6 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     /* Create autostack and set solver */
     // NOTE MoT is wonderful
     _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims << _joint_vel_lims;
-    
     _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
 
     /* Logger */
@@ -126,10 +133,14 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _logger->add("right_ref_or", _right_ref->linear());
     _logger->add("left_actual_or", left_pose.linear());
     _logger->add("right_actual_or", right_pose.linear());
+    
     _logger->add("computed_q", _q0);
-
     _logger->add("computed_qdot", _q0);
-
+    
+    _logger->createVectorVariable("kv", _q0.size());
+    _logger->createVectorVariable("k_ref", _q0.size());
+    _logger->createVectorVariable("_qerror", _q0.size());
+    
     _logger->add("time", 0.0);
 
 
@@ -164,6 +175,13 @@ void OpenSotIk::on_start(double time)
 
 void OpenSotIk::control_loop(double time, double period)
 {
+    // read commands
+    if(command.read(current_command)){
+        if( current_command.str() == "stiffness_regulation") {
+            _robot->getStiffness(_k0);
+        }
+    }
+    
     /* Model update */
     _model->setJointPosition(_q);
     _model->update();
@@ -199,7 +217,7 @@ void OpenSotIk::control_loop(double time, double period)
     _logger->add("left_actual_or", left_pose.linear());
     _logger->add("right_actual_or", right_pose.linear());
     _logger->add("computed_q", _q);
-
+    
     _logger->add("time", time);
 
 
@@ -218,9 +236,43 @@ void OpenSotIk::control_loop(double time, double period)
     /* Update q */
     _q += _dq;
     
+    
+    // check if stiffness adjusting is needed
+    if( current_command.str() == "stiffness_regulation") {
+        
+        // NOTE alpha
+        double alpha = 80.0;
+        
+        _robot->getMotorPosition(_qm);
+        _qerror = (_qm - _q);
+        
+        _logger->add("_qerror", _qerror);
+        
+        _kv.resize(_qerror.size());
+        
+        for(int i = 0; i < _qerror.size(); i++) {
+            
+            _kv(i) = alpha * std::pow(_qerror(i), 2.0);
+            
+            // NOTE saturation
+            if( _kv(i) > 150.0 ) {
+                _kv(i) = 150.0;
+            }
+        }
+        
+        _kref = _k0 + _kv;
+        
+//         _robot->setStiffness(_kref);
+            
+        _logger->add("kv", _kv);
+        _logger->add("k_ref", _kref);
+        
+    }
+
+    
+    // gravity compensation
     _robot->model().computeGravityCompensation(_tau);
     _robot->setEffortReference(_tau);
-
 
     /* Send command to motors */
     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
