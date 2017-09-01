@@ -23,6 +23,8 @@
 
 #include <XCM/XBotControlPlugin.h>
 
+#include <Controller/IController.h>
+
 namespace MiscPlugins {
 
 class Poses : public XBot::XBotControlPlugin {
@@ -68,6 +70,7 @@ private:
 
     std::vector< std::string> _joint_names;
 
+    XBot::IController::Ptr _controller;
 
 
 };

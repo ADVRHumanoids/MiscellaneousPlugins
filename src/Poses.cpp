@@ -21,6 +21,8 @@
 #include <MiscellaneousPlugins/Poses.h>
 #include <boost/algorithm/clamp.hpp>
 
+#include <Controller/QuadraticSpring.h>
+
 REGISTER_XBOT_PLUGIN(Poses, MiscPlugins::Poses)
 
 bool MiscPlugins::Poses::getJointConfigurations()
@@ -89,9 +91,18 @@ bool MiscPlugins::Poses::init_control_plugin(std::string path_to_config_file,
     _current_configuration = -1;
     _read_cmd_ok = false;
 
-    _logger = XBot::MatLogger::getLogger("/tmp/XBotCore_log");
+    _logger = XBot::MatLogger::getLogger("/tmp/Poses_log");
 
     _robot->model().getModelOrderedJoints(_joint_names);
+    
+    // allocate a qudratic spring controller
+    _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, 
+                                                                      std::shared_ptr<XBot::ModelInterface>(&_robot->model()), // TBD check it
+                                                                      1000);
+    // attacch logger
+    _controller->attachLogger(_logger);
+    // initialize it (RT-safe)
+    _controller->initialize();
 
      // read the JointConfiguration from the YAML specified in path_to_config_file
     return getJointConfigurations();
@@ -99,10 +110,10 @@ bool MiscPlugins::Poses::init_control_plugin(std::string path_to_config_file,
     _robot->getSrdf();
 }
 
+
+
 void MiscPlugins::Poses::control_loop(double time, double period)
 {
-
-
     // if we are not moving to a new joint configuration update t0 and q0
     if(!_change_configuration) {
 
@@ -137,6 +148,13 @@ void MiscPlugins::Poses::control_loop(double time, double period)
         // move to the configuration
         if( (time - _t0) <= _move_to_configuration_time.at(_current_configuration) ) {
             _q_ref = _q0 + smootherstep(_t0, _t0 + _move_to_configuration_time[_current_configuration],  time) * (_joint_configuration[_current_configuration]-_q0);
+            
+            // update internal model with q_ref
+            _robot->model().setJointPosition(_q_ref);
+            _robot->model().update();
+    
+            // NOTE custom controller loop
+            _controller->control();
 
             // trajectory
             _robot->setPositionReference(_q_ref);
@@ -150,7 +168,10 @@ void MiscPlugins::Poses::control_loop(double time, double period)
 
 void MiscPlugins::Poses::on_start(double time)
 {
-XBot::XBotControlPlugin::on_start(time);
+    // start the controller
+    _controller->init_control();
+    
+    // _controller->disable();
 }
 
 void MiscPlugins::Poses::on_stop(double time)
@@ -160,6 +181,7 @@ XBot::XBotControlPlugin::on_stop(time);
 
 bool MiscPlugins::Poses::close()
 {
+    _logger->flush();
     return true;
 }
 

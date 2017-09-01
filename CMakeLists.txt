@@ -85,7 +85,7 @@ endif()
 
 ### Poses
 add_library(Poses SHARED src/Poses.cpp)
-target_link_libraries(Poses ${XCM_LIBRARIES})
+target_link_libraries(Poses ${Controller_LIBRARIES} ${XCM_LIBRARIES})
 ycm_library_install(Poses 1 0 0)
 
 ### TorqueExample
@@ -98,6 +98,7 @@ if ( Xenomai_FOUND )
     set_xeno_flags(IkRosIo)
     set_xeno_flags(IkRosSMPub)
     set_xeno_flags(TorqueExample)
+    set_xeno_flags(Poses)
 endif()
 
 include(AddUninstallTarget)
