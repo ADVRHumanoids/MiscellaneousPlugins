@@ -2,6 +2,7 @@
 #include <OpenSoT/tasks/velocity/MinimizeAcceleration.h>
 #include <OpenSoT/tasks/velocity/Manipulability.h>
 #include <OpenSoT/tasks/velocity/MinimumEffort.h>
+#include <Controller/QuadraticSpring.h>
 
 REGISTER_XBOT_PLUGIN(OpenSotIk, MiscPlugins::OpenSotIk)
 
@@ -137,11 +138,14 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _logger->add("computed_q", _q0);
     _logger->add("computed_qdot", _q0);
     
-    _logger->createVectorVariable("kv", _q0.size());
-    _logger->createVectorVariable("k_ref", _q0.size());
-    _logger->createVectorVariable("_qerror", _q0.size());
-    
     _logger->add("time", 0.0);
+    
+    // allocate a qudratic spring controller
+    _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, _model, 1000);
+    // attacch logger
+    _controller->attachLogger(_logger);
+    // initialize it (RT-safe)
+    _controller->initialize();
 
 
     return true;
@@ -178,7 +182,10 @@ void OpenSotIk::control_loop(double time, double period)
     // read commands
     if(command.read(current_command)){
         if( current_command.str() == "stiffness_regulation") {
+            // store k0
             _robot->getStiffness(_k0);
+            // start the controller
+            _controller->init_control();
         }
     }
     
@@ -237,36 +244,15 @@ void OpenSotIk::control_loop(double time, double period)
     _q += _dq;
     
     
-    // check if stiffness adjusting is needed
+    // check if stiffness regulation command is given
     if( current_command.str() == "stiffness_regulation") {
         
-        // NOTE alpha
-        double alpha = 1000.0;
-        
-        _robot->getMotorPosition(_qm);
-        _qerror = (_qm - _q);
-        
-        _logger->add("_qerror", _qerror);
-        
-        _kv.resize(_qerror.size());
-        
-        for(int i = 0; i < _qerror.size(); i++) {
-            
-            _kv(i) = alpha * std::pow(_qerror(i), 2.0);
-            
-            // NOTE saturation
-            if( _kv(i) > 150.0 ) {
-                _kv(i) = 150.0;
-            }
-        }
-        
-        _kref = _k0 + _kv;
-        
-        _robot->setStiffness(_kref);
-            
-        _logger->add("kv", _kv);
-        _logger->add("k_ref", _kref);
-        
+        _controller->control();
+    }
+    
+    // stop stiffness regulation
+    if( current_command.str() == "stiffness_regulation_OFF") {
+        _robot->setStiffness(_k0);
     }
 
     

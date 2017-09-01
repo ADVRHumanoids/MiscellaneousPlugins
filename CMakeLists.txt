@@ -42,11 +42,14 @@ find_package(OpenSoT QUIET)
 find_package(iDynTree QUIET)
 find_package(catkin QUIET COMPONENTS roscpp geometry_msgs)
 
+find_package(Controller REQUIRED)
+
 # include
 include_directories(include
                     ${XCM_INCLUDE_DIRS}
                     ${OpenSoT_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
+                    ${Controller_INCLUDE_DIRS}
                     )
 
 
@@ -65,7 +68,7 @@ ycm_library_install(BasicFsm 1 0 0)
 ### OpenSoT IK
 if(${OpenSoT_FOUND})
     add_library(OpenSotIk SHARED src/OpenSotIk.cpp)
-    target_link_libraries(OpenSotIk ${XCM_LIBRARIES} ${OpenSoT_LIBRARIES} ${iDynTree_LIBRARIES})
+    target_link_libraries(OpenSotIk ${Controller_LIBRARIES} ${XCM_LIBRARIES} ${OpenSoT_LIBRARIES} ${iDynTree_LIBRARIES})
     ycm_library_install(OpenSotIk 1 0 0)
 endif()
 

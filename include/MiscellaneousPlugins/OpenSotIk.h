@@ -29,6 +29,7 @@
 #include <OpenSoT/constraints/velocity/JointLimits.h>
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
 #include <OpenSoT/utils/AutoStack.h>
+#include <Controller/IController.h>
 
 namespace MiscPlugins {
 
@@ -51,7 +52,7 @@ private:
 
     double _start_time, _final_qdot_lim;
 
-    Eigen::VectorXd _q0, _q, _dq, _qhome, _q_ref, _tau, _k0, _kv, _kref, _qm, _qerror;
+    Eigen::VectorXd _q0, _q, _dq, _qhome, _q_ref, _tau, _k0;
     
     XBot::Utils::SecondOrderFilter<Eigen::VectorXd> _filter_q;
 
@@ -71,6 +72,8 @@ private:
     OpenSoT::solvers::QPOases_sot::Ptr _solver;
 
     XBot::MatLogger::Ptr _logger;
+    
+    XBot::IController::Ptr _controller;
 
 };
 
