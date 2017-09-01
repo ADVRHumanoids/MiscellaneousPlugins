@@ -21,6 +21,7 @@
 #include <MiscellaneousPlugins/Poses.h>
 #include <boost/algorithm/clamp.hpp>
 
+REGISTER_XBOT_PLUGIN(Poses, MiscPlugins::Poses)
 
 bool MiscPlugins::Poses::getJointConfigurations()
 {
@@ -122,6 +123,8 @@ void MiscPlugins::Poses::control_loop(double time, double period)
 
             // configuration changed
             _change_configuration = true;
+            
+            DPRINTF("Received Command : %s\n", current_command.str().c_str());
         }
         else {
             DPRINTF("Command : %s is not supported\n", current_command.str().c_str());
