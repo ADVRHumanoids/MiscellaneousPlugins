@@ -98,7 +98,8 @@ bool MiscPlugins::Poses::init_control_plugin(std::string path_to_config_file,
     // allocate a qudratic spring controller
     _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, 
                                                                       std::shared_ptr<XBot::ModelInterface>(&_robot->model()), // TBD check it
-                                                                      1000);
+                                                                      1000,
+                                                                      200);
     // attacch logger
     _controller->attachLogger(_logger);
     // initialize it (RT-safe)
@@ -171,7 +172,7 @@ void MiscPlugins::Poses::on_start(double time)
     // start the controller
     _controller->init_control();
     
-    // _controller->disable();
+//     _controller->disableController();
 }
 
 void MiscPlugins::Poses::on_stop(double time)
