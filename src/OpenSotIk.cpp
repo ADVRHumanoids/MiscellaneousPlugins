@@ -141,7 +141,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _logger->add("time", 0.0);
     
     // allocate a qudratic spring controller
-    _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, _model, 1000);
+    _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, _model, 2500, 500);
     // attacch logger
     _controller->attachLogger(_logger);
     // initialize it (RT-safe)
