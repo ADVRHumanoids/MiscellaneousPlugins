@@ -71,7 +71,7 @@ private:
     std::vector<XBot::SharedObject<Eigen::Affine3d>> _shared_obj;
     std::vector<XBot::SubscriberRT<Eigen::Affine3d>> _sub_rt;
     
-    XBot::Utils::SecondOrderFilter<Eigen::VectorXd> _filter;
+    XBot::Utils::SecondOrderFilter<Eigen::Vector3d> _filter;
     
     Eigen::Affine3d _pose_raw, _pose_ref;
 

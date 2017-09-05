@@ -17,7 +17,7 @@ bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::S
         _sub_rt.push_back(XBot::SubscriberRT<Eigen::Affine3d>(pipe_name));
     }
     
-    _filter = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>( (2*3.1415) * 10, 1.0, 0.001, Eigen::VectorXd::Zero(robot->getJointNum()));
+    _filter = XBot::Utils::SecondOrderFilter<Eigen::Vector3d>( (2*3.1415) * 10, 1.0, 0.001, Eigen::Vector3d::Zero());
 
     _robot = robot;
     
@@ -42,8 +42,15 @@ void IkRosRtPlugin::control_loop(double time, double period)
         if( _sub_rt[i].read(_pose_raw) ){
             
             _pose_ref = _pose_raw;
-            _pose_ref.translation() = _filter.process(_pose_raw.translation());
             
+            Eigen::Vector3d position_raw = _pose_raw.translation();
+            _pose_ref.translation() = _filter.process(position_raw);
+            
+            // NOTE not caring about orientation: put a fixed one
+//             _pose_ref.linear() << 0, 0, -1,
+//                                   0, 1,  0,
+//                                   1, 0,  0;
+//             
             *(_shared_obj[i]) = _pose_ref;
 //             std::cout << pose.matrix() << std::endl;
         }
