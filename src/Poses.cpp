@@ -99,7 +99,7 @@ bool MiscPlugins::Poses::init_control_plugin(std::string path_to_config_file,
     _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, 
                                                                       std::shared_ptr<XBot::ModelInterface>(&_robot->model()), // TBD check it
                                                                       1000,
-                                                                      200);
+                                                                      500);
     // attacch logger
     _controller->attachLogger(_logger);
     // initialize it (RT-safe)
