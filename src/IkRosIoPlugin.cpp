@@ -6,8 +6,8 @@ REGISTER_XBOT_IO_PLUGIN(IkRosIo, MiscPlugins::IkRosIoPlugin)
 
 bool MiscPlugins::IkRosIoPlugin::init(std::string path_to_config_file)
 {
-    _topic_names.push_back("w_T_left_ee");
-    _topic_names.push_back("w_T_right_ee");
+    _topic_names.push_back("w_T_left_ee_ref");
+    _topic_names.push_back("w_T_right_ee_ref");
     _pipe_names = _topic_names;
 
     for(std::string pipe_name : _pipe_names){

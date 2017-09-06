@@ -6,7 +6,7 @@ using namespace MiscPlugins;
 
 bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::SharedMemory::Ptr shared_memory, XBot::RobotInterface::Ptr robot)
 {
-    _sharedobj_names = {"w_T_left_ee", "w_T_right_ee"};
+    _sharedobj_names = {"w_T_left_ee_ref", "w_T_right_ee_ref"};
     _pipe_names = _sharedobj_names;
 
     for(std::string shobj_name : _sharedobj_names){
@@ -28,8 +28,6 @@ void IkRosRtPlugin::on_start(double time)
 {
     Eigen::Affine3d ree_start_pose;
     
-    std::cout << _robot->model().chain("right_arm").getTipLinkName() << "---" << std::endl;
-    
     _robot->model().getPose(_robot->model().chain("right_arm").getTipLinkName(), 
                             _robot->model().chain("torso").getTipLinkName(), 
                             ree_start_pose); 
@@ -47,10 +45,10 @@ void IkRosRtPlugin::control_loop(double time, double period)
             _pose_ref.translation() = _filter.process(position_raw);
             
             // NOTE not caring about orientation: put a fixed one
-//             _pose_ref.linear() << 0, 0, -1,
-//                                   0, 1,  0,
-//                                   1, 0,  0;
-//             
+            _pose_ref.linear() << 0, 0, -1,
+                                  0, 1,  0,
+                                  1, 0,  0;
+            
             *(_shared_obj[i]) = _pose_ref;
 //             std::cout << pose.matrix() << std::endl;
         }
