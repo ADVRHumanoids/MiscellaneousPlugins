@@ -6,9 +6,9 @@ import sys
 import rospy
 from ADVR_ROS.msg import tactile_sensor
 
-#rostopic pub /tactile_sensor ADVR_ROS/tacte_sensor "row: 10
-#col: 10
-#array: [5, 2, 2, 1,5,6,1,5,8,8, 5, 2, 2, 1,5,6,1,5,8,8, 5, 2, 2, 1,5,6,1,5,8,8, 5, 2, 2, 1,5,6,1,5,8,8, 5, 2, 2, 1,5,6,1,5,8,8, 5, 2, 2, 1,5,6,1,5,8,8, 5, 2, 2, 1,5,6,1,5,8,8, 5, 2, 2, 1,5,6,1,5,8,8, 5, 2, 2, 1,5,6,1,5,8,8, 5, 2, 2, 1,5,6,1,5,8,8]"
+#rostopic pub /tactile_sensor ADVR_ROS/tactile_sensor "row: 8 
+#col: 3 
+#array: [5, 2, 4, 5, 2, 4, 5, 2, 4, 5, 2, 4, 5, 2, 4, 5, 2, 4, 5, 2, 4, 5, 2, 4,]" 
 
 maxForceVal = 10
 minForceVal = 1
@@ -36,7 +36,7 @@ def listener():
 	
 	global matrix
 	#array= [[1,2],[3,4]]
-	array =  np.random.rand(10,10);
+	array =  np.random.rand(8,3);
 	global minForceVal
 	global maxForceVal
 	array[0] = minForceVal
