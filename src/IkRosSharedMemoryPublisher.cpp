@@ -6,8 +6,10 @@ using namespace MiscPlugins;
 
 bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::SharedMemory::Ptr shared_memory, XBot::RobotInterface::Ptr robot)
 {
-    _sharedobj_names = {"w_T_left_ee_ref", "w_T_right_ee_ref"};
-    _pipe_names = _sharedobj_names;
+    _pipe_names = {"w_T_left_ee_ref", "w_T_right_ee_ref"};
+    _sharedobj_names = {"w_T_left_ee", "w_T_right_ee"};
+
+
 
     for(std::string shobj_name : _sharedobj_names){
         _shared_obj.push_back(shared_memory->advertise<Eigen::Affine3d>(shobj_name));
