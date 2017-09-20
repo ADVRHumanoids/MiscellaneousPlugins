@@ -30,6 +30,7 @@
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
 #include <OpenSoT/utils/AutoStack.h>
 #include <OpenSoT/tasks/velocity/CoM.h>
+#include <OpenSoT/tasks/velocity/Gaze.h>
 
 #include <MiscellaneousPlugins/TransformMessage.h>
 
@@ -71,6 +72,7 @@ private:
     OpenSoT::tasks::velocity::Cartesian::Ptr _left_ee, _right_ee;
     OpenSoT::tasks::velocity::Cartesian::Ptr _l_sole, _r_sole;
     OpenSoT::tasks::velocity::CoM::Ptr _com;
+    OpenSoT::tasks::velocity::Gaze::Ptr _gaze;
     OpenSoT::tasks::velocity::Postural::Ptr _postural;
     OpenSoT::constraints::velocity::JointLimits::Ptr _joint_lims;
     OpenSoT::constraints::velocity::VelocityLimits::Ptr _joint_vel_lims;

@@ -153,6 +153,9 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     
     
 
+    _gaze.reset(new OpenSoT::tasks::velocity::Gaze("GAZE", _qhome, *_model, "world"));
+    active_joints[_model->getDofIndex(_model->chain("torso").getJointId(2))] = false;
+    _gaze->setActiveJointsMask(active_joints);
 
 
     //            auto_stack = (l_sole + r_sole)/
@@ -162,7 +165,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     /* Create autostack and set solver */
     _autostack = (  (_l_sole + _r_sole)/
-                    (_com)/
+                    (_com + _gaze)/
                     (_right_ee + _left_ee)/
                     (_postural) ) << _joint_lims << _joint_vel_lims;
     _autostack->update(_qhome);               
