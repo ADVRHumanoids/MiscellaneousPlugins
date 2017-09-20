@@ -67,9 +67,11 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
     _right_ref = shared_memory->get<Eigen::Affine3d>("w_T_right_ee");
+    _gaze_ref = shared_memory->get<Eigen::Affine3d>("w_T_gaze");
 
     _left_ref.reset(new Eigen::Affine3d);
     _right_ref.reset(new Eigen::Affine3d);
+    _gaze_ref.reset(new Eigen::Affine3d);
 
     std::vector<bool> active_joints(_model->getJointNum(), true);
     active_joints[_model->getDofIndex(_model->chain("torso").getJointId(0))] = false;
@@ -176,6 +178,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     Eigen::Affine3d left_pose, right_pose;
     _logger->add("left_ref_pos", _left_ref->translation());
     _logger->add("right_ref_pos", _right_ref->translation());
+    _logger->add("gaze_ref", _gaze_ref->translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
     
@@ -258,6 +261,8 @@ void OpenSotIk::control_loop(double time, double period)
     _left_ee->setReference(aux_matrix);
     aux_matrix= _right_ref->matrix();
     _right_ee->setReference(aux_matrix);
+    aux_matrix= _gaze_ref->matrix();
+    _gaze->setGaze(aux_matrix);
     
 
     /* Log data */
@@ -267,6 +272,7 @@ void OpenSotIk::control_loop(double time, double period)
 
     _logger->add("left_ref_pos", _left_ref->translation());
     _logger->add("right_ref_pos", _right_ref->translation());
+    _logger->add("gaze_ref", _gaze_ref->translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
     

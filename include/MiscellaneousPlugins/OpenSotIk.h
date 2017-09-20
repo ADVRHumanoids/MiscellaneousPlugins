@@ -65,7 +65,7 @@ private:
     XBot::PublisherRT<XBot::TransformMessage> _world_pub;
     Eigen::Affine3d _current_world;
 
-    XBot::SharedObject<Eigen::Affine3d> _left_ref, _right_ref;
+    XBot::SharedObject<Eigen::Affine3d> _left_ref, _right_ref, _gaze_ref;
     
     Eigen::MatrixXd _aux_matrix;
 
