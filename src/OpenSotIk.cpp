@@ -17,14 +17,16 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     // robot and model 
     _robot = robot;
-    _model = XBot::ModelInterface::getModel(path_to_config_file);
+    _model = XBot::ModelInterface::getModel("/home/arturo/Code/advr-superbuild/configs/ADVR_shared/centauro/configs/config_centauro.yaml");
     
-    // starting position
-    _robot->sense();
-    _robot->model().getJointPosition(_q0);
+//     // starting position
+//     _robot->sense();
+//     _robot->model().getJointPosition(_q0);
 
     // home from SRDF
     _model->getRobotState("home", _qhome);
+    _model->setJointPosition(_qhome);
+    _model->update();
 
     // limits check for IK
     for(unsigned int i = 0; i < _qhome.size(); ++i)
@@ -141,11 +143,11 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _logger->add("time", 0.0);
     
     // allocate a qudratic spring controller
-    _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, _model, 1000, 500);
-    // attacch logger
-    _controller->attachLogger(_logger);
-    // initialize it (RT-safe)
-    _controller->initialize();
+//     _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, _model, 1000, 500);
+//     // attacch logger
+//     _controller->attachLogger(_logger);
+//     // initialize it (RT-safe)
+//     _controller->initialize();
 
 
     return true;
@@ -180,14 +182,14 @@ void OpenSotIk::on_start(double time)
 void OpenSotIk::control_loop(double time, double period)
 {
     // read commands
-    if(command.read(current_command)){
-        if( current_command.str() == "stiffness_regulation") {
-            // store k0
-            _robot->getStiffness(_k0);
-            // start the controller
-            _controller->init_control();
-        }
-    }
+//     if(command.read(current_command)){
+//         if( current_command.str() == "stiffness_regulation") {
+//             // store k0
+//             _robot->getStiffness(_k0);
+//             // start the controller
+//             _controller->init_control();
+//         }
+//     }
     
     /* Model update */
     _model->setJointPosition(_q);
@@ -196,7 +198,7 @@ void OpenSotIk::control_loop(double time, double period)
     /* HACK: shape IK gain to avoid discontinuity */
     double alpha = 0;
     alpha = (time - _start_time)/100;
-    alpha = alpha > 1 ? 1 : alpha;
+    alpha = alpha > .1 ? .1 : alpha;
 
     _left_ee->setLambda(alpha);
     _right_ee->setLambda(alpha);
@@ -245,20 +247,20 @@ void OpenSotIk::control_loop(double time, double period)
     
     
     // check if stiffness regulation command is given
-    if( current_command.str() == "stiffness_regulation") {
-        
-        _controller->control();
-    }
+//     if( current_command.str() == "stiffness_regulation") {
+//         
+//         _controller->control();
+//     }
     
     // stop stiffness regulation
-    if( current_command.str() == "stiffness_regulation_OFF") {
-        _robot->setStiffness(_k0);
-    }
+//     if( current_command.str() == "stiffness_regulation_OFF") {
+//         _robot->setStiffness(_k0);
+//     }
 
     
     // gravity compensation
-    _robot->model().computeGravityCompensation(_tau);
-    _robot->setEffortReference(_tau);
+//     _robot->model().computeGravityCompensation(_tau);
+//     _robot->setEffortReference(_tau);
 
     /* Send command to motors */
     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
