@@ -81,6 +81,10 @@ if(${catkin_FOUND})
     add_library(IkRosSMPub SHARED src/IkRosSharedMemoryPublisher.cpp)
     target_link_libraries(IkRosSMPub ${XCM_LIBRARIES} ${catkin_LIBRARIES})
     ycm_library_install(IkRosSMPub 1 0 0)
+    
+    add_library(CirclePublisher SHARED src/CirclePublisher.cpp)
+    target_link_libraries(CirclePublisher ${XCM_LIBRARIES} ${catkin_LIBRARIES})
+    ycm_library_install(CirclePublisher 1 0 0)
 endif()
 
 ### Poses
