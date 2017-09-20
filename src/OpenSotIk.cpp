@@ -17,7 +17,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     // robot and model 
     _robot = robot;
-    _model = XBot::ModelInterface::getModel("/home/arturo/Code/advr-superbuild/configs/ADVR_shared/centauro/configs/config_centauro.yaml");
+    _model = XBot::ModelInterface::getModel("/home/lucamuratore/advr-superbuild/configs/ADVR_shared/centauro/configs/config_centauro.yaml");
     
 //     // starting position
 //     _robot->sense();
