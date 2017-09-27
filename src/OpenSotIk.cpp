@@ -17,7 +17,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     // robot and model 
     _robot = robot;
-    _model = XBot::ModelInterface::getModel("/home/embedded/advr-superbuild/configs/ADVR_shared/centauro/configs/config_centauro.yaml");
+    _model = XBot::ModelInterface::getModel("/home/user/advr-superbuild/configs/ADVR_shared/kuka_lwr/configs/config_kuka.yaml");
     
 //     // starting position
 //     _robot->sense();
@@ -48,7 +48,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 //     _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>( (2*3.1415) * 0.5, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
 
     // info
-    std::cout << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome << std::endl;
+    //std::cout << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome << std::endl;
 
     // read shared memory data for ee pose
     _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
@@ -66,16 +66,16 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _left_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_LEFT",
                                                             _qhome,
                                                             *_model,
-                                                            "arm1_8",
-                                                            _model->chain("torso").getTipLinkName()
+                                                            _model->chain("arm1").getTipLinkName(),
+                                                            _model->chain("arm1").getBaseLinkName()
                                                             ) );
      //_left_ee->setActiveJointsMask(active_joints);
 
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
                                                              *_model,
-                                                             "arm2_7",
-                                                             _model->chain("torso").getTipLinkName()
+                                                             _model->chain("arm1").getTipLinkName(),
+                                                             _model->chain("arm1").getBaseLinkName()
                                                              ) );
 //     _right_ee->setActiveJointsMask(active_joints);
 
@@ -122,7 +122,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     /* Create autostack and set solver */
     // NOTE MoT is wonderful
-    _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims << _joint_vel_lims;
+    _autostack = ( (_right_ee) / (_postural) ) << _joint_lims << _joint_vel_lims;
     _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
 
     /* Logger */

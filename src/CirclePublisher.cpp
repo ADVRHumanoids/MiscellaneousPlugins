@@ -28,8 +28,8 @@ void CirclePublisher::on_start(double time)
 {
     Eigen::Affine3d ree_start_pose;
     
-    _robot->model().getPose(_robot->model().chain("right_arm").getTipLinkName(), 
-                            _robot->model().chain("torso").getTipLinkName(), 
+    _robot->model().getPose(_robot->model().chain("arm1").getTipLinkName(), 
+                            _robot->model().chain("arm1").getBaseLinkName(), 
                             ree_start_pose); 
     _filter.reset(ree_start_pose.translation());
 }
@@ -38,7 +38,7 @@ void CirclePublisher::control_loop(double time, double period)
 {
     for( int i : {1} ){
             
-            Eigen::Vector3d position_raw = Eigen::Vector3d(0.55, -0.5, 0.1);
+            Eigen::Vector3d position_raw = Eigen::Vector3d(0.20, -0.5, 0.1);
             
             position_raw.y() += 0.1*std::sin(time);
             position_raw.z() += 0.1*std::cos(time);
@@ -46,9 +46,9 @@ void CirclePublisher::control_loop(double time, double period)
             _pose_ref.translation() = _filter.process(position_raw);
             
             // NOTE not caring about orientation: put a fixed one
-            _pose_ref.linear() << 0, 0, -1,
-                                  0, 1,  0,
-                                  1, 0,  0;
+            _pose_ref.linear() << 1, 0, 0,
+                                  0, 1, 0,
+                                  0, 0, 1;
             
             *(_shared_obj[i]) = _pose_ref;
 //             std::cout << pose.matrix() << std::endl;
