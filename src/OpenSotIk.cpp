@@ -17,7 +17,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     // robot and model 
     _robot = robot;
-    _model = XBot::ModelInterface::getModel("/home/embedded/advr-superbuild/configs/ADVR_shared/centauro/configs/config_centauro.yaml");
+    _model = XBot::ModelInterface::getModel(XBot::Utils::computeAbsolutePath("configs/ADVR_shared/centauro/configs/config_centauro.yaml"));
     
 //     // starting position
 //     _robot->sense();
@@ -160,8 +160,8 @@ void OpenSotIk::on_start(double time)
     _model->getJointPosition(_q);
 
 
-    _model->getPose(_left_ee->getDistalLink(), _left_ee->getBaseLink(), *_left_ref);
-    _model->getPose(_right_ee->getDistalLink(), _left_ee->getBaseLink(), *_right_ref);
+    _model->getPose(_left_ee->getDistalLink(), _model->chain("torso").getTipLinkName(), *_left_ref);
+    _model->getPose(_right_ee->getDistalLink(), _model->chain("torso").getTipLinkName(), *_right_ref);
 
     /* Set cartesian tasks reference */
     _left_ee->setReference(_left_ref->matrix());
@@ -213,8 +213,8 @@ void OpenSotIk::control_loop(double time, double period)
 
     /* Log data */
     Eigen::Affine3d left_pose, right_pose;
-    _model->getPose(_left_ee->getDistalLink(), left_pose);
-    _model->getPose(_right_ee->getDistalLink(), right_pose);
+    _model->getPose(_left_ee->getDistalLink(), _model->chain("torso").getTipLinkName(), left_pose);
+    _model->getPose(_right_ee->getDistalLink(), _model->chain("torso").getTipLinkName(), right_pose);
 
     _logger->add("left_ref_pos", _left_ref->translation());
     _logger->add("right_ref_pos", _right_ref->translation());
