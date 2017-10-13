@@ -74,7 +74,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
                                                              *_model,
-                                                             "arm2_7",
+                                                             "arm2_8",
                                                              _model->chain("torso").getTipLinkName()
                                                              ) );
 //     _right_ee->setActiveJointsMask(active_joints);
