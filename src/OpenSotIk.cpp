@@ -68,7 +68,10 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
     _right_ref = shared_memory->get<Eigen::Affine3d>("w_T_right_ee");
+    
+    _joint_ref = shared_memory->get<Eigen::VectorXd>("joint_positions_desired");
 
+    _joint_ref.reset(new Eigen::VectorXd);
     _left_ref.reset(new Eigen::Affine3d);
     _right_ref.reset(new Eigen::Affine3d);
 
@@ -192,6 +195,7 @@ void OpenSotIk::on_start(double time)
     _model->getPose(_right_ee->getDistalLink(), *_right_ref);
 
     /* Set cartesian tasks reference */
+    _joint_space->setReference(*_joint_ref);
     _left_ee->setReference(_left_ref->matrix());
     _right_ee->setReference(_right_ref->matrix());
 
@@ -238,6 +242,8 @@ void OpenSotIk::control_loop(double time, double period)
     _left_ee->setReference(aux_matrix);
     aux_matrix= _right_ref->matrix();
     _right_ee->setReference(aux_matrix);
+    _joint_space->setReference(*_joint_ref);
+    //std::cout<<"_joint_ref: "<<*_joint_ref<<std::endl;
     
 
     /* Log data */
@@ -262,6 +268,7 @@ void OpenSotIk::control_loop(double time, double period)
 
 
     /* Stack update and solve */
+    _joint_space->update(_q);
     _autostack->update(_q);
 
     _dq.setZero(_model->getJointNum());

@@ -66,6 +66,8 @@ private:
 
     XBot::SharedObject<Eigen::Affine3d> _left_ref, _right_ref;
     
+    XBot::SharedObject<Eigen::VectorXd> _joint_ref;
+    
     Eigen::MatrixXd _aux_matrix;
 
     OpenSoT::tasks::velocity::Cartesian::Ptr _left_ee, _right_ee;

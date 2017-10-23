@@ -8,15 +8,23 @@ bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::S
 {
     _sharedobj_names = {"w_T_left_ee", "w_T_right_ee"};
     _pipe_names = _sharedobj_names;
+    
+   
 
     for(std::string shobj_name : _sharedobj_names){
         _shared_obj.push_back(shared_memory->advertise<Eigen::Affine3d>(shobj_name));
     }
 
+    
+    
     for(std::string pipe_name : _pipe_names){
         _sub_rt.push_back(XBot::SubscriberRT<Eigen::Affine3d>(pipe_name));
     }
     
+    //joints
+    _sharedjointposition_name = {"joint_positions_desired"};
+    _shared_jointposition.push_back(shared_memory->advertise<Eigen::VectorXd>(_sharedjointposition_name[0]));
+    _sub_rtjointposition.push_back(XBot::SubscriberRT<Eigen::VectorXd>(_sharedjointposition_name[0]));
     
     //grasp
     
@@ -44,6 +52,12 @@ void IkRosRtPlugin::control_loop(double time, double period)
             *(_shared_obj[i]) = pose;
 //             std::cout << pose.matrix() << std::endl;
         }
+    }
+    
+    Eigen::VectorXd jointvect;
+    if(_sub_rtjointposition[0].read(jointvect) ){
+      std::cout<<"pipe read "<<jointvect<<std::endl;
+        *(_shared_jointposition[0]) = jointvect;
     }
     
     
