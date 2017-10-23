@@ -72,6 +72,7 @@ private:
     OpenSoT::tasks::velocity::Cartesian::Ptr _l_sole, _r_sole;
     OpenSoT::tasks::velocity::CoM::Ptr _com;
     OpenSoT::tasks::velocity::Postural::Ptr _postural;
+    OpenSoT::tasks::velocity::Postural::Ptr _joint_space;
     OpenSoT::constraints::velocity::JointLimits::Ptr _joint_lims;
     OpenSoT::constraints::velocity::VelocityLimits::Ptr _joint_vel_lims;
 

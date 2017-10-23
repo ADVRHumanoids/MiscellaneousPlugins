@@ -2,6 +2,7 @@
 #include <OpenSoT/tasks/velocity/MinimizeAcceleration.h>
 #include <OpenSoT/tasks/velocity/Manipulability.h>
 #include <OpenSoT/tasks/velocity/MinimumEffort.h>
+#include <OpenSoT/SubTask.h>
 
 REGISTER_XBOT_PLUGIN(OpenSotIk, MiscPlugins::OpenSotIk)
 
@@ -96,32 +97,16 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
-//     Eigen::VectorXd weight;
-//     weight.setOnes((_model->getJointNum()));
-//     weight(0) = 100;
     _postural->setLambda(0.0);
-//     _postural->setWeight(weight.asDiagonal());
-    
     _postural->setActiveJointsMask(active_joints);
 
-    /* Create min acc task */
-    OpenSoT::tasks::velocity::MinimizeAcceleration::Ptr min_acc( new OpenSoT::tasks::velocity::MinimizeAcceleration(_qhome) );
 
-    /* Manipulability task */
-    OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_right( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _right_ee) );
-    OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_left( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _left_ee) );
-
-
-
-
-
-    /* Create joint limits & velocity limits */
+    /* Create joint limits & velocity limits */ //CHECK!
     Eigen::VectorXd qmin, qmax, qdotmax;
     _model->getJointLimits(qmin, qmax);
     _model->getVelocityLimits(qdotmax);
     double qdotmax_min = qdotmax.minCoeff();
     Eigen::VectorXd qdotlims(_qhome.size()); qdotlims.setConstant(_qhome.size(),2.0); // 1.0); // qdotmax_min);
-//     qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
     _final_qdot_lim = 2.0;
 
     _joint_lims.reset( new OpenSoT::constraints::velocity::JointLimits(_qhome, qmax, qmin) );
@@ -144,25 +129,23 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                             ) );
 
     _com.reset( new OpenSoT::tasks::velocity::CoM(_qhome,*_model));
-    //Eigen::Matrix3d W = Eigen::Matrix3d::Identity();
-    //W(2,2) = 0.0;
-    //_com->setWeight(W);
     
     _com->setActiveJointsMask(active_joints);
     //_com->setLambda(1.0);
-    
-    
 
 
 
-    //            auto_stack = (l_sole + r_sole)/
-//                    (gaze + com)/
-//                    (l_wrist + r_wrist)/
-//                    (postural)<<joint_limits<<vel_limits;
+    _joint_space.reset(new OpenSoT::tasks::velocity::Postural(_qhome));
+    std::list<unsigned int> neck_indices;
+    neck_indices.push_back(_model->getDofIndex("NeckYawj"));
+    neck_indices.push_back(_model->getDofIndex("NeckPitchj"));
+    OpenSoT::SubTask::Ptr joint_space_gaze(
+                new OpenSoT::SubTask(_joint_space, neck_indices));
+        
 
     /* Create autostack and set solver */
     _autostack = (  (_l_sole + _r_sole)/
-                    (_com)/
+                    (_com + joint_space_gaze)/
                     (_right_ee + _left_ee)/
                     (_postural) ) << _joint_lims << _joint_vel_lims;
     _autostack->update(_qhome);               
