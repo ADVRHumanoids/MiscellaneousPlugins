@@ -100,7 +100,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
-    _postural->setLambda(0.0);
+    _postural->setLambda(0.1);
     _postural->setActiveJointsMask(active_joints);
 
 
@@ -138,19 +138,28 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
 
 
-    _joint_space.reset(new OpenSoT::tasks::velocity::Postural(_qhome));
     std::list<unsigned int> neck_indices;
     neck_indices.push_back(_model->getDofIndex("NeckYawj"));
     neck_indices.push_back(_model->getDofIndex("NeckPitchj"));
     OpenSoT::SubTask::Ptr joint_space_gaze(
-                new OpenSoT::SubTask(_joint_space, neck_indices));
+                new OpenSoT::SubTask(_postural, neck_indices));
+    
+     std::list<unsigned int> body_indices;
+     for(unsigned int i = 0; i < _model->getJointNum(); ++i)
+     {
+        std::string joint_name = _model->getJointByDofIndex(i)->getJointName();
+        if(joint_name.compare("NeckYawj")!= 0 && joint_name.compare("NeckPitchj")!= 0)
+          body_indices.push_back(_model->getDofIndex(joint_name));
+     }
+    OpenSoT::SubTask::Ptr joint_space_body(
+                new OpenSoT::SubTask(_postural, body_indices));
         
 
     /* Create autostack and set solver */
     _autostack = (  (_l_sole + _r_sole)/
                     (_com + joint_space_gaze)/
                     (_right_ee + _left_ee)/
-                    (_postural) ) << _joint_lims << _joint_vel_lims;
+                    (joint_space_body) ) << _joint_lims << _joint_vel_lims;
     _autostack->update(_qhome);               
 
     _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
@@ -195,13 +204,13 @@ void OpenSotIk::on_start(double time)
     _model->getPose(_right_ee->getDistalLink(), *_right_ref);
 
     /* Set cartesian tasks reference */
-    _joint_space->setReference(*_joint_ref);
+    _postural->setReference(*_joint_ref);
     _left_ee->setReference(_left_ref->matrix());
     _right_ee->setReference(_right_ref->matrix());
 
     _left_ee->setLambda(0);
     _right_ee->setLambda(0);
-    _postural->setLambda(0);
+    //_postural->setLambda(0);
 
     _start_time = time;
     
@@ -234,7 +243,7 @@ void OpenSotIk::control_loop(double time, double period)
 
     _left_ee->setLambda(alpha);
     _right_ee->setLambda(alpha);
-    _postural->setLambda(alpha);
+    //_postural->setLambda(alpha);
 
 
     /* Set cartesian tasks reference */
@@ -242,7 +251,7 @@ void OpenSotIk::control_loop(double time, double period)
     _left_ee->setReference(aux_matrix);
     aux_matrix= _right_ref->matrix();
     _right_ee->setReference(aux_matrix);
-    _joint_space->setReference(*_joint_ref);
+    _postural->setReference(*_joint_ref);
     //std::cout<<"_joint_ref: "<<*_joint_ref<<std::endl;
     
 
@@ -268,7 +277,7 @@ void OpenSotIk::control_loop(double time, double period)
 
 
     /* Stack update and solve */
-    _joint_space->update(_q);
+    _postural->update(_q);
     _autostack->update(_q);
 
     _dq.setZero(_model->getJointNum());
