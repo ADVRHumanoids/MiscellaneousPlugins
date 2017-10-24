@@ -19,7 +19,7 @@ bool MiscPlugins::IkRosIoPlugin::init(std::string path_to_config_file)
     }
     
     joint_position.push_back("joint_positions_desired");
-    _pub_joint.push_back(XBot::PublisherNRT<Eigen::VectorXd>(joint_position[0]));
+    _pub_joint.push_back(XBot::PublisherNRT<MiscPlugins::Vector>(joint_position[0]));
 
     ros::NodeHandle n;
 
@@ -93,7 +93,7 @@ void MiscPlugins::IkRosIoPlugin::grasp_callback(std_msgs::Float64::ConstPtr msg,
 }
 
 void MiscPlugins::IkRosIoPlugin::joint_callback(sensor_msgs::JointState::ConstPtr msg, int id){
-  Eigen::VectorXd joint_position;
+  MiscPlugins::Vector joint_position;
   
   joint_position.setZero(_model->getJointNum());
   

@@ -69,9 +69,9 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
     _right_ref = shared_memory->get<Eigen::Affine3d>("w_T_right_ee");
     
-    _joint_ref = shared_memory->get<Eigen::VectorXd>("joint_positions_desired");
+    _joint_ref = shared_memory->get<MiscPlugins::Vector>("joint_positions_desired");
 
-    _joint_ref.reset(new Eigen::VectorXd);
+    _joint_ref.reset(new MiscPlugins::Vector);
     _left_ref.reset(new Eigen::Affine3d);
     _right_ref.reset(new Eigen::Affine3d);
 

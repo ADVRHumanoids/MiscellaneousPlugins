@@ -32,6 +32,7 @@
 #include <OpenSoT/tasks/velocity/CoM.h>
 
 #include <MiscellaneousPlugins/TransformMessage.h>
+#include <MiscellaneousPlugins/IkRosIoPlugin.h>
 
 namespace MiscPlugins {
 
@@ -66,7 +67,7 @@ private:
 
     XBot::SharedObject<Eigen::Affine3d> _left_ref, _right_ref;
     
-    XBot::SharedObject<Eigen::VectorXd> _joint_ref;
+    XBot::SharedObject<MiscPlugins::Vector> _joint_ref;
     
     Eigen::MatrixXd _aux_matrix;
 

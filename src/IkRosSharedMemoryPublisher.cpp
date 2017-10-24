@@ -23,8 +23,8 @@ bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::S
     
     //joints
     _sharedjointposition_name = {"joint_positions_desired"};
-    _shared_jointposition.push_back(shared_memory->advertise<Eigen::VectorXd>(_sharedjointposition_name[0]));
-    _sub_rtjointposition.push_back(XBot::SubscriberRT<Eigen::VectorXd>(_sharedjointposition_name[0]));
+    _shared_jointposition.push_back(shared_memory->advertise<MiscPlugins::Vector>(_sharedjointposition_name[0]));
+    _sub_rtjointposition.push_back(XBot::SubscriberRT<MiscPlugins::Vector>(_sharedjointposition_name[0]));
     
     //grasp
     
@@ -54,9 +54,8 @@ void IkRosRtPlugin::control_loop(double time, double period)
         }
     }
     
-    Eigen::VectorXd jointvect;
+    MiscPlugins::Vector jointvect;
     if(_sub_rtjointposition[0].read(jointvect) ){
-      std::cout<<"pipe read "<<jointvect<<std::endl;
         *(_shared_jointposition[0]) = jointvect;
     }
     

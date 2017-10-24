@@ -33,6 +33,8 @@
 
 namespace MiscPlugins {
 
+typedef Eigen::Matrix<double, Eigen::Dynamic, 1, 0, 100, 1> Vector;
+  
 class IkRosIoPlugin : public XBot::IOPlugin {
 
 public:
@@ -46,7 +48,7 @@ private:
     std::vector<std::string> _topic_names, _pipe_names, joint_position;
     std::vector<ros::Subscriber> _sub, _sub_joint;
     std::vector<XBot::PublisherNRT<Eigen::Affine3d>> _pub_nrt;
-    std::vector<XBot::PublisherNRT<Eigen::VectorXd>> _pub_joint;
+    std::vector<XBot::PublisherNRT<Vector>> _pub_joint;
     
     std::vector<std::string> _grasp_topic_names, _grasp_pipe_names;
     std::vector<XBot::PublisherNRT<double>> _grasp_pub_nrt;
@@ -68,6 +70,7 @@ class IkRosRtPlugin : public XBot::XBotControlPlugin {
 
 public:
 
+    
     virtual bool init_control_plugin(std::string path_to_config_file,
                                      XBot::SharedMemory::Ptr shared_memory,
                                      XBot::RobotInterface::Ptr robot);
@@ -76,13 +79,14 @@ public:
     virtual bool close(){}
 
 private:
-
+  
+   
     std::vector<std::string> _sharedobj_names, _pipe_names, _sharedjointposition_name;
     
     std::vector<XBot::SharedObject<Eigen::Affine3d>> _shared_obj;
-    std::vector<XBot::SharedObject<Eigen::VectorXd>> _shared_jointposition;
+    std::vector<XBot::SharedObject<Vector>> _shared_jointposition;
     std::vector<XBot::SubscriberRT<Eigen::Affine3d>> _sub_rt;
-    std::vector<XBot::SubscriberRT<Eigen::VectorXd>> _sub_rtjointposition;
+    std::vector<XBot::SubscriberRT<Vector>> _sub_rtjointposition;
     
     //_grasp
     std::vector<std::string> _sharedobj_grasp_names, _pipe_grasp_names;
