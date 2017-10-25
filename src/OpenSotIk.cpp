@@ -130,6 +130,18 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                             "r_sole",
                                                             "world"
                                                             ) );
+    
+    _waist.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_WAIST",
+                                                            _qhome,
+                                                            *_model,
+                                                            "Waist",
+                                                            "world"
+                                                            ) );
+    std::list<unsigned int> orient_indices;
+    orient_indices.push_back(3);
+    orient_indices.push_back(4);
+    orient_indices.push_back(5);
+    OpenSoT::SubTask::Ptr waist_orient(new OpenSoT::SubTask(_waist, orient_indices));
 
     _com.reset( new OpenSoT::tasks::velocity::CoM(_qhome,*_model));
     
@@ -157,7 +169,7 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     /* Create autostack and set solver */
     _autostack = (  (_l_sole + _r_sole)/
-                    (_com + joint_space_gaze)/
+                    (_com + joint_space_gaze + waist_orient)/
                     (_right_ee + _left_ee)/
                     (joint_space_body) ) << _joint_lims << _joint_vel_lims;
     _autostack->update(_qhome);               
@@ -278,6 +290,7 @@ void OpenSotIk::control_loop(double time, double period)
 
     /* Stack update and solve */
     _postural->update(_q);
+    _waist->update(_q);
     _autostack->update(_q);
 
     _dq.setZero(_model->getJointNum());
