@@ -77,12 +77,10 @@ double MiscPlugins::Poses::smootherstep(double edge0, double edge1, double x)
 }
 
 
-bool MiscPlugins::Poses::init_control_plugin(std::string path_to_config_file,
-                                             XBot::SharedMemory::Ptr shared_memory,
-                                             XBot::RobotInterface::Ptr robot)
+bool MiscPlugins::Poses::init_control_plugin(XBot::Handle::Ptr handle)
 {
-    _robot = robot;
-    _path_to_config_file = path_to_config_file;
+    _robot = handle->getRobotInterface();
+    _path_to_config_file = handle->getPathToConfigFile();
 
     _change_configuration = false;
     _current_configuration = -1;
@@ -106,7 +104,7 @@ void MiscPlugins::Poses::control_loop(double time, double period)
     if(!_change_configuration) {
 
         // blocking reading: wait for a command
-        while(!command.read(current_command)){
+        if(!current_command.str().empty()) {
             return;
         }
 

@@ -16,14 +16,12 @@ void setWorld(const KDL::Frame& l_sole_T_Waist, Eigen::VectorXd& q, XBot::ModelI
 }
 
 
-bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
-                                    XBot::SharedMemory::Ptr shared_memory,
-                                    XBot::RobotInterface::Ptr robot)
+bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 {
     _logger = XBot::MatLogger::getLogger("/tmp/OpenSotIk_logger");
 
-    _robot = robot;
-    _model = XBot::ModelInterface::getModel(path_to_config_file);
+    _robot = handle->getRobotInterface();
+    _model = XBot::ModelInterface::getModel(handle->getPathToConfigFile());
 
     _robot->sense();
     _robot->model().getJointPosition(_q0);
@@ -66,14 +64,10 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     std::cout<<"home: "<<_qhome<<std::endl;
 
-    _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
-    _right_ref = shared_memory->get<Eigen::Affine3d>("w_T_right_ee");
+    _left_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_left_ee");
+    _right_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_right_ee");
     
-    _joint_ref = shared_memory->get<MiscPlugins::Vector>("joint_positions_desired");
-
-    _joint_ref.reset(new MiscPlugins::Vector);
-    _left_ref.reset(new Eigen::Affine3d);
-    _right_ref.reset(new Eigen::Affine3d);
+    _joint_ref = handle->getSharedMemory()->getSharedObject<MiscPlugins::Vector>("joint_positions_desired");
 
     std::vector<bool> active_joints(_model->getJointNum(), true);
     active_joints[_model->getDofIndex(_model->chain("torso").getJointId(0))] = false;
@@ -178,15 +172,15 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     /* Logger */
     Eigen::Affine3d left_pose, right_pose;
-    _logger->add("left_ref_pos", _left_ref->translation());
-    _logger->add("right_ref_pos", _right_ref->translation());
+    _logger->add("left_ref_pos", _left_ref.get().translation());
+    _logger->add("right_ref_pos", _right_ref.get().translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
     
     _logger->add("com", _com->getActualPosition());
 
-    _logger->add("left_ref_or", _left_ref->linear());
-    _logger->add("right_ref_or", _right_ref->linear());
+    _logger->add("left_ref_or", _left_ref.get().linear());
+    _logger->add("right_ref_or", _right_ref.get().linear());
     _logger->add("left_actual_or", left_pose.linear());
     _logger->add("right_actual_or", right_pose.linear());
     _logger->add("computed_q", _q0);
@@ -211,14 +205,18 @@ void OpenSotIk::on_start(double time)
     _model->syncFrom(*_robot);
     _model->getJointPosition(_q);
 
-
-    _model->getPose(_left_ee->getDistalLink(), *_left_ref);
-    _model->getPose(_right_ee->getDistalLink(), *_right_ref);
+    Eigen::Affine3d left_ee_pose, right_ee_pose;
+   
+    _model->getPose(_left_ee->getDistalLink(), left_ee_pose);
+    _model->getPose(_right_ee->getDistalLink(), right_ee_pose);
+    
+     _left_ref.set(left_ee_pose);
+     _right_ref.set(right_ee_pose);
 
     /* Set cartesian tasks reference */
-    _postural->setReference(*_joint_ref);
-    _left_ee->setReference(_left_ref->matrix());
-    _right_ee->setReference(_right_ref->matrix());
+    _postural->setReference(_joint_ref.get());
+    _left_ee->setReference(_left_ref.get().matrix());
+    _right_ee->setReference(_right_ref.get().matrix());
 
     _left_ee->setLambda(0);
     _right_ee->setLambda(0);
@@ -259,11 +257,11 @@ void OpenSotIk::control_loop(double time, double period)
 
 
     /* Set cartesian tasks reference */
-    aux_matrix = _left_ref->matrix();
+    aux_matrix = _left_ref.get().matrix();
     _left_ee->setReference(aux_matrix);
-    aux_matrix= _right_ref->matrix();
+    aux_matrix= _right_ref.get().matrix();
     _right_ee->setReference(aux_matrix);
-    _postural->setReference(*_joint_ref);
+    _postural->setReference(_joint_ref.get());
     //std::cout<<"_joint_ref: "<<*_joint_ref<<std::endl;
     
 
@@ -272,15 +270,15 @@ void OpenSotIk::control_loop(double time, double period)
     _model->getPose(_left_ee->getDistalLink(), left_pose);
     _model->getPose(_right_ee->getDistalLink(), right_pose);
 
-    _logger->add("left_ref_pos", _left_ref->translation());
-    _logger->add("right_ref_pos", _right_ref->translation());
+    _logger->add("left_ref_pos", _left_ref.get().translation());
+    _logger->add("right_ref_pos", _right_ref.get().translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
     
     _logger->add("com", _com->getActualPosition());
 
-    _logger->add("left_ref_or", _left_ref->linear());
-    _logger->add("right_ref_or", _right_ref->linear());
+    _logger->add("left_ref_or", _left_ref.get().linear());
+    _logger->add("right_ref_or", _right_ref.get().linear());
     _logger->add("left_actual_or", left_pose.linear());
     _logger->add("right_actual_or", right_pose.linear());
     _logger->add("computed_q", _q);

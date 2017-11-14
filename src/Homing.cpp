@@ -29,9 +29,7 @@ Homing::Homing()
 
 }
 
-bool Homing::init_control_plugin(std::string path_to_config_file,
-                                 XBot::SharedMemory::Ptr shared_memory,
-                                 XBot::RobotInterface::Ptr robot)
+bool Homing::init_control_plugin(XBot::Handle::Ptr handle)
 {
     /* This function is called outside the real time loop, so we can
      * allocate memory on the heap, print stuff, ...
@@ -39,7 +37,7 @@ bool Homing::init_control_plugin(std::string path_to_config_file,
 
 
     /* Save robot to a private member. */
-    _robot = robot;
+    _robot = handle->getRobotInterface();
 
     /* Get home configuration from SRDF file */
     if(!_robot->getRobotState("home", _q_home)){

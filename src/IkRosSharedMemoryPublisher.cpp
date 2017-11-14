@@ -4,7 +4,7 @@ REGISTER_XBOT_PLUGIN(IkRosSMPub, MiscPlugins::IkRosRtPlugin)
 
 using namespace MiscPlugins;
 
-bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::SharedMemory::Ptr shared_memory, XBot::RobotInterface::Ptr robot)
+bool IkRosRtPlugin::init_control_plugin(XBot::Handle::Ptr handle)
 {
     _sharedobj_names = {"w_T_left_ee", "w_T_right_ee"};
     _pipe_names = _sharedobj_names;
@@ -12,7 +12,7 @@ bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::S
    
 
     for(std::string shobj_name : _sharedobj_names){
-        _shared_obj.push_back(shared_memory->advertise<Eigen::Affine3d>(shobj_name));
+        _shared_obj.push_back(handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>(shobj_name));
     }
 
     
@@ -23,7 +23,7 @@ bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::S
     
     //joints
     _sharedjointposition_name = {"joint_positions_desired"};
-    _shared_jointposition.push_back(shared_memory->advertise<MiscPlugins::Vector>(_sharedjointposition_name[0]));
+    _shared_jointposition.push_back(handle->getSharedMemory()->getSharedObject<MiscPlugins::Vector>(_sharedjointposition_name[0]));
     _sub_rtjointposition.push_back(XBot::SubscriberRT<MiscPlugins::Vector>(_sharedjointposition_name[0]));
     
     //grasp
@@ -32,7 +32,7 @@ bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::S
      _pipe_grasp_names = _sharedobj_grasp_names;
 
     for(std::string shobj_name : _sharedobj_grasp_names){
-        _grasp_shared_obj.push_back(shared_memory->advertise<double>(shobj_name));
+        _grasp_shared_obj.push_back(handle->getSharedMemory()->getSharedObject<double>(shobj_name));
     }
 
     for(std::string pipe_name : _pipe_grasp_names){
@@ -49,14 +49,14 @@ void IkRosRtPlugin::control_loop(double time, double period)
     for( int i = 0; i < _sharedobj_names.size(); i++ ){
         Eigen::Affine3d pose;
         if( _sub_rt[i].read(pose) ){
-            *(_shared_obj[i]) = pose;
+            _shared_obj[i].set(pose);
 //             std::cout << pose.matrix() << std::endl;
         }
     }
     
     MiscPlugins::Vector jointvect;
     if(_sub_rtjointposition[0].read(jointvect) ){
-        *(_shared_jointposition[0]) = jointvect;
+        _shared_jointposition[0].set(jointvect);
     }
     
     
@@ -64,7 +64,7 @@ void IkRosRtPlugin::control_loop(double time, double period)
    for( int i = 0; i < _sharedobj_grasp_names.size(); i++ ){
         double grasp;
         if( _grasp_sub_rt[i].read(grasp) ){
-            *(_grasp_shared_obj[i]) = grasp;
+            _grasp_shared_obj[i].set(grasp);
 //             std::cout << pose.matrix() << std::endl;
         }
     }
