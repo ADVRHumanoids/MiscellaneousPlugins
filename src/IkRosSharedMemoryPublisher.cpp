@@ -4,7 +4,7 @@ REGISTER_XBOT_PLUGIN(IkRosSMPub, MiscPlugins::IkRosRtPlugin)
 
 using namespace MiscPlugins;
 
-bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::SharedMemory::Ptr shared_memory, XBot::RobotInterface::Ptr robot)
+bool IkRosRtPlugin::init_control_plugin(XBot::Handle::Ptr handle)
 {
     _pipe_names = {"w_T_left_ee_ref", "w_T_right_ee_ref"};
     _sharedobj_names = {"w_T_left_ee", "w_T_right_ee"};
@@ -12,7 +12,7 @@ bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::S
 
 
     for(std::string shobj_name : _sharedobj_names){
-        _shared_obj.push_back(shared_memory->advertise<Eigen::Affine3d>(shobj_name));
+        _shared_obj.push_back(handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>(shobj_name));
     }
 
     for(std::string pipe_name : _pipe_names){
@@ -21,7 +21,7 @@ bool IkRosRtPlugin::init_control_plugin(std::string path_to_config_file, XBot::S
     
     _filter = XBot::Utils::SecondOrderFilter<Eigen::Vector3d>( (2*3.1415) * 10, 1.0, 0.001, Eigen::Vector3d::Zero());
 
-    _robot = robot;
+    _robot = handle->getRobotInterface();
     
     return true;
 }
@@ -51,7 +51,7 @@ void IkRosRtPlugin::control_loop(double time, double period)
                                   0, 1,  0,
                                   1, 0,  0;
             
-            *(_shared_obj[i]) = _pose_ref;
+            _shared_obj[i].set(_pose_ref);
 //             std::cout << pose.matrix() << std::endl;
         }
     }

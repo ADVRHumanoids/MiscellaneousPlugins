@@ -2,22 +2,19 @@
 #include <OpenSoT/tasks/velocity/MinimizeAcceleration.h>
 #include <OpenSoT/tasks/velocity/Manipulability.h>
 #include <OpenSoT/tasks/velocity/MinimumEffort.h>
-#include <Controller/QuadraticSpring.h>
 
 REGISTER_XBOT_PLUGIN(OpenSotIk, MiscPlugins::OpenSotIk)
 
 namespace MiscPlugins {
 
-bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
-                                    XBot::SharedMemory::Ptr shared_memory,
-                                    XBot::RobotInterface::Ptr robot)
+bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 {
     // logger
     _logger = XBot::MatLogger::getLogger("/tmp/OpenSotIk_logger");
 
     // robot and model 
-    _robot = robot;
-    _model = XBot::ModelInterface::getModel(XBot::Utils::computeAbsolutePath("configs/ADVR_shared/centauro/configs/config_centauro.yaml"));
+    _robot = handle->getRobotInterface();
+    _model = XBot::ModelInterface::getModel(handle->getPathToConfigFile());
     
 //     // starting position
 //     _robot->sense();
@@ -51,11 +48,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     std::cout << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome << std::endl;
 
     // read shared memory data for ee pose
-    _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
-    _right_ref = shared_memory->get<Eigen::Affine3d>("w_T_right_ee");
-
-    _left_ref.reset(new Eigen::Affine3d);
-    _right_ref.reset(new Eigen::Affine3d);
+    _left_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_left_ee");
+    _right_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_right_ee");
 
     // active joint mask
     std::vector<bool> active_joints(_model->getJointNum(), true);
@@ -127,13 +121,13 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     /* Logger */
     Eigen::Affine3d left_pose, right_pose;
-    _logger->add("left_ref_pos", _left_ref->translation());
-    _logger->add("right_ref_pos", _right_ref->translation());
+    _logger->add("left_ref_pos", _left_ref.get().translation());
+    _logger->add("right_ref_pos", _right_ref.get().translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
 
-    _logger->add("left_ref_or", _left_ref->linear());
-    _logger->add("right_ref_or", _right_ref->linear());
+    _logger->add("left_ref_or", _left_ref.get().linear());
+    _logger->add("right_ref_or", _right_ref.get().linear());
     _logger->add("left_actual_or", left_pose.linear());
     _logger->add("right_actual_or", right_pose.linear());
     
@@ -160,12 +154,17 @@ void OpenSotIk::on_start(double time)
     _model->getJointPosition(_q);
 
 
-    _model->getPose(_left_ee->getDistalLink(), _model->chain("torso").getTipLinkName(), *_left_ref);
-    _model->getPose(_right_ee->getDistalLink(), _model->chain("torso").getTipLinkName(), *_right_ref);
+    Eigen::Affine3d left_ee_pose, right_ee_pose;
+  
+    _model->getPose(_left_ee->getDistalLink(), left_ee_pose);
+    _model->getPose(_right_ee->getDistalLink(), right_ee_pose);
+
+    _left_ref.set(left_ee_pose);
+    _right_ref.set(right_ee_pose);
 
     /* Set cartesian tasks reference */
-    _left_ee->setReference(_left_ref->matrix());
-    _right_ee->setReference(_right_ref->matrix());
+    _left_ee->setReference(_left_ref.get().matrix());
+    _right_ee->setReference(_right_ref.get().matrix());
 
     _left_ee->setLambda(0);
     _right_ee->setLambda(0);
@@ -206,9 +205,9 @@ void OpenSotIk::control_loop(double time, double period)
 
 
     /* Set cartesian tasks reference */
-    _aux_matrix = _left_ref->matrix();
+    _aux_matrix = _left_ref.get().matrix();
     _left_ee->setReference(_aux_matrix);
-    _aux_matrix = _right_ref->matrix();
+    _aux_matrix = _right_ref.get().matrix();
     _right_ee->setReference(_aux_matrix);
 
     /* Log data */
@@ -216,13 +215,13 @@ void OpenSotIk::control_loop(double time, double period)
     _model->getPose(_left_ee->getDistalLink(), _model->chain("torso").getTipLinkName(), left_pose);
     _model->getPose(_right_ee->getDistalLink(), _model->chain("torso").getTipLinkName(), right_pose);
 
-    _logger->add("left_ref_pos", _left_ref->translation());
-    _logger->add("right_ref_pos", _right_ref->translation());
+    _logger->add("left_ref_pos", _left_ref.get().translation());
+    _logger->add("right_ref_pos", _right_ref.get().translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
 
-    _logger->add("left_ref_or", _left_ref->linear());
-    _logger->add("right_ref_or", _right_ref->linear());
+    _logger->add("left_ref_or", _left_ref.get().linear());
+    _logger->add("right_ref_or", _right_ref.get().linear());
     _logger->add("left_actual_or", left_pose.linear());
     _logger->add("right_actual_or", right_pose.linear());
     _logger->add("computed_q", _q);

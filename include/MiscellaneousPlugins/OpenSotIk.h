@@ -29,7 +29,6 @@
 #include <OpenSoT/constraints/velocity/JointLimits.h>
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
 #include <OpenSoT/utils/AutoStack.h>
-#include <Controller/IController.h>
 
 namespace MiscPlugins {
 
@@ -37,9 +36,7 @@ class OpenSotIk : public XBot::XBotControlPlugin {
 
 public:
 
-    virtual bool init_control_plugin(std::string path_to_config_file,
-                                    XBot::SharedMemory::Ptr shared_memory,
-                                    XBot::RobotInterface::Ptr robot);
+    virtual bool init_control_plugin(XBot::Handle::Ptr handle);
 
     virtual void on_start(double time);
 
@@ -73,7 +70,7 @@ private:
 
     XBot::MatLogger::Ptr _logger;
     
-    XBot::IController::Ptr _controller;
+//     XBot::IController::Ptr _controller;
 
 };
 

@@ -42,7 +42,7 @@ find_package(OpenSoT QUIET)
 find_package(iDynTree QUIET)
 find_package(catkin QUIET COMPONENTS roscpp geometry_msgs)
 
-find_package(Controller REQUIRED)
+# find_package(Controller REQUIRED)
 
 # include
 include_directories(include
@@ -52,17 +52,6 @@ include_directories(include
                     ${Controller_INCLUDE_DIRS}
                     )
 
-
-### Homing
-add_library(Homing SHARED src/Homing.cpp)
-target_link_libraries(Homing ${XCM_LIBRARIES})
-ycm_library_install(Homing 1 0 0)
-
-
-### BasicFsm
-add_library(BasicFsm SHARED src/BasicFsm.cpp)
-target_link_libraries(BasicFsm ${XCM_LIBRARIES})
-ycm_library_install(BasicFsm 1 0 0)
 
 
 ### OpenSoT IK
@@ -87,11 +76,6 @@ if(${catkin_FOUND})
     ycm_library_install(CirclePublisher 1 0 0)
 endif()
 
-### Poses
-add_library(Poses SHARED src/Poses.cpp)
-target_link_libraries(Poses ${Controller_LIBRARIES} ${XCM_LIBRARIES})
-ycm_library_install(Poses 1 0 0)
-
 ### TorqueExample
 add_library(TorqueExample SHARED src/TorqueExample.cpp)
 target_link_libraries(TorqueExample ${XCM_LIBRARIES})
@@ -102,7 +86,6 @@ if ( Xenomai_FOUND )
     set_xeno_flags(IkRosIo)
     set_xeno_flags(IkRosSMPub)
     set_xeno_flags(TorqueExample)
-    set_xeno_flags(Poses)
 endif()
 
 include(AddUninstallTarget)
