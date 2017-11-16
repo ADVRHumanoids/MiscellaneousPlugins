@@ -46,9 +46,9 @@ void CirclePublisher::control_loop(double time, double period)
             _pose_ref.translation() = _filter.process(position_raw);
             
             // NOTE not caring about orientation: put a fixed one
-            _pose_ref.linear() << 0, 0, -1,
+            _pose_ref.linear() << 0,  0,  1,
                                   0, 1,  0,
-                                  1, 0,  0;
+                                  -1,  0,  0;
             
             _shared_obj[i].set(_pose_ref);
 //             std::cout << pose.matrix() << std::endl;

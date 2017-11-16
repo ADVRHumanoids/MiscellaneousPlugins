@@ -156,8 +156,8 @@ void OpenSotIk::on_start(double time)
 
     Eigen::Affine3d left_ee_pose, right_ee_pose;
   
-    _model->getPose(_left_ee->getDistalLink(), left_ee_pose);
-    _model->getPose(_right_ee->getDistalLink(), right_ee_pose);
+    _model->getPose(_left_ee->getDistalLink(), _left_ee->getBaseLink(), left_ee_pose);
+    _model->getPose(_right_ee->getDistalLink(), _right_ee->getBaseLink(), right_ee_pose);
 
     _left_ref.set(left_ee_pose);
     _right_ref.set(right_ee_pose);
