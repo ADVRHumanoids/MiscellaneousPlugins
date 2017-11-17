@@ -66,6 +66,11 @@ target_link_libraries(Homing ${XCM_LIBRARIES})
 ycm_library_install(Homing 1 0 0)
 
 
+### JointStateForwarding
+add_library(JointStateForwarding SHARED src/JointStateForwarding.cpp)
+target_link_libraries(JointStateForwarding ${XCM_LIBRARIES})
+ycm_library_install(JointStateForwarding 1 0 0)
+
 ### BasicFsm
 add_library(BasicFsm SHARED src/BasicFsm.cpp)
 target_link_libraries(BasicFsm ${XCM_LIBRARIES})
