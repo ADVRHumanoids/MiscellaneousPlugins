@@ -25,7 +25,7 @@
 #include <XBotInterface/Logger.hpp>
 #include "ros/ros.h"
 #include "sensor_msgs/JointState.h"
-#include <XCM/CommandAdvr.h>
+#include <XBotCore/CommandAdvr.h>
 #include <sstream>
 
 namespace MiscPlugins {

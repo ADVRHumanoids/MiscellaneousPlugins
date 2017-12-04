@@ -26,7 +26,7 @@ namespace MiscPlugins {
 
 void JointStateForwarding::Callback(const sensor_msgs::JointState::ConstPtr& msg)
 { 
-    XCM::CommandAdvr cmd;
+    XBotCore::CommandAdvr cmd;
     cmd.position = msg->position;
     cmd.name = msg->name;
     
@@ -58,7 +58,7 @@ bool JointStateForwarding::init(std::string path_to_config_file,
                         this,
                         _1));
     
-    chatter_pub = n->advertise<XCM::CommandAdvr>("/xbotcore/cogimon/command", 1);
+    chatter_pub = n->advertise<XBotCore::CommandAdvr>("/xbotcore/cogimon/command", 1);
     
     //ros::Rate loop_rate(10);
     
