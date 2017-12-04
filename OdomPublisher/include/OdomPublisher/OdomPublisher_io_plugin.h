@@ -40,7 +40,8 @@ class OdomPublisher : public XBot::IOPlugin
 
 public:
 
-    virtual bool init(std::string path_to_config_file);
+    virtual bool init(std::string path_to_config_file, 
+                      XBot::SharedMemory::Ptr shmem);
 
     virtual void run();
 

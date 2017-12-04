@@ -102,9 +102,9 @@ if(${catkin_FOUND})
     
 #     if(${ADVR_ROS_FOUND})
     
-    add_library(FHRosIo SHARED src/FHRosIoPlugin.cpp)
-    target_link_libraries(FHRosIo ${XCM_LIBRARIES} ${catkin_LIBRARIES} ${ADVR_ROS_LIBRARIES})
-    ycm_library_install(FHRosIo 1 0 0)
+#     add_library(FHRosIo SHARED src/FHRosIoPlugin.cpp)
+#     target_link_libraries(FHRosIo ${XCM_LIBRARIES} ${catkin_LIBRARIES} ${ADVR_ROS_LIBRARIES})
+#     ycm_library_install(FHRosIo 1 0 0)
 
         
 #      endif()
@@ -129,7 +129,7 @@ if ( Xenomai_FOUND )
     set_xeno_flags(Grasp)
     set_xeno_flags(IkRosIo)
     set_xeno_flags(IkRosSMPub)
-    set_xeno_flags(FHRosIo)
+#     set_xeno_flags(FHRosIo)
     set_xeno_flags(TorqueExample)
 endif()
 

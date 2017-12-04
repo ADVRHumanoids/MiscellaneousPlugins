@@ -24,7 +24,8 @@ REGISTER_XBOT_IO_PLUGIN(OdomPublisher, XBotPlugin::OdomPublisher)
 
 
 
-bool XBotPlugin::OdomPublisher::init(std::string path_to_config_file)
+bool XBotPlugin::OdomPublisher::init(std::string path_to_config_file, 
+                                     XBot::SharedMemory::Ptr shmem)
 {
     _world_pose_sub.init("world_odom");
 

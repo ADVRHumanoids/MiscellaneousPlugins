@@ -38,7 +38,8 @@ JointStateForwarding::JointStateForwarding()
 
 }
 
-bool JointStateForwarding::init(std::string path_to_config_file)
+bool JointStateForwarding::init(std::string path_to_config_file, 
+                                XBot::SharedMemory::Ptr shmem)
 {
    
 
@@ -57,7 +58,7 @@ bool JointStateForwarding::init(std::string path_to_config_file)
                         this,
                         _1));
     
-    chatter_pub = n->advertise<XCM::CommandAdvr>("/xbotcore/iiwa14/command", 1);
+    chatter_pub = n->advertise<XCM::CommandAdvr>("/xbotcore/cogimon/command", 1);
     
     //ros::Rate loop_rate(10);
     

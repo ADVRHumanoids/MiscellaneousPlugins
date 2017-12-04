@@ -261,29 +261,29 @@ void OpenSotIk::control_loop(double time, double period)
     _left_ee->setReference(aux_matrix);
     aux_matrix= _right_ref.get().matrix();
     _right_ee->setReference(aux_matrix);
-    _postural->setReference(_joint_ref.get());
+//     _postural->setReference(_joint_ref.get()); TBD
     //std::cout<<"_joint_ref: "<<*_joint_ref<<std::endl;
     
 
     /* Log data */
   
-    _model->getPose(_left_ee->getDistalLink(), left_pose);
-    _model->getPose(_right_ee->getDistalLink(), right_pose);
+//     _model->getPose(_left_ee->getDistalLink(), left_pose);
+//     _model->getPose(_right_ee->getDistalLink(), right_pose);
 
-    _logger->add("left_ref_pos", _left_ref.get().translation());
-    _logger->add("right_ref_pos", _right_ref.get().translation());
-    _logger->add("left_actual_pos", left_pose.translation());
-    _logger->add("right_actual_pos", right_pose.translation());
-    
-    _logger->add("com", _com->getActualPosition());
-
-    _logger->add("left_ref_or", _left_ref.get().linear());
-    _logger->add("right_ref_or", _right_ref.get().linear());
-    _logger->add("left_actual_or", left_pose.linear());
-    _logger->add("right_actual_or", right_pose.linear());
-    _logger->add("computed_q", _q);
-
-    _logger->add("time", time);
+//     _logger->add("left_ref_pos", _left_ref.get().translation());
+//     _logger->add("right_ref_pos", _right_ref.get().translation());
+//     _logger->add("left_actual_pos", left_pose.translation());
+//     _logger->add("right_actual_pos", right_pose.translation());
+//     
+//     _logger->add("com", _com->getActualPosition());
+// 
+//     _logger->add("left_ref_or", _left_ref.get().linear());
+//     _logger->add("right_ref_or", _right_ref.get().linear());
+//     _logger->add("left_actual_or", left_pose.linear());
+//     _logger->add("right_actual_or", right_pose.linear());
+//     _logger->add("computed_q", _q);
+// 
+//     _logger->add("time", time);
 
 
     /* Stack update and solve */
@@ -298,7 +298,7 @@ void OpenSotIk::control_loop(double time, double period)
         return;
     }
 
-    _logger->add("computed_qdot", _dq/period);
+//     _logger->add("computed_qdot", _dq/period);
 
     /* Update q */
     _q += _dq;

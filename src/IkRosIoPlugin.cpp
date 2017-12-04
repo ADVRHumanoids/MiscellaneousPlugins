@@ -4,7 +4,8 @@
 REGISTER_XBOT_IO_PLUGIN(IkRosIo, MiscPlugins::IkRosIoPlugin)
 
 
-bool MiscPlugins::IkRosIoPlugin::init(std::string path_to_config_file)
+bool MiscPlugins::IkRosIoPlugin::init(std::string path_to_config_file, 
+                                      XBot::SharedMemory::Ptr shmem)
 {
   
     _model = XBot::ModelInterface::getModel(path_to_config_file);
