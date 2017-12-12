@@ -51,7 +51,7 @@ void IkRosRtPlugin::control_loop(double time, double period)
                                   0, 1,  0,
                                   1, 0,  0;
             
-            _shared_obj[i].set(_pose_ref);
+            _shared_obj[i].set(_pose_raw);
 //             std::cout << pose.matrix() << std::endl;
         }
     }
