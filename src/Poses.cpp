@@ -21,6 +21,8 @@
 #include <MiscellaneousPlugins/Poses.h>
 #include <boost/algorithm/clamp.hpp>
 
+REGISTER_XBOT_PLUGIN_(MiscPlugins::Poses)
+
 
 bool MiscPlugins::Poses::getJointConfigurations()
 {
@@ -77,12 +79,10 @@ double MiscPlugins::Poses::smootherstep(double edge0, double edge1, double x)
 }
 
 
-bool MiscPlugins::Poses::init_control_plugin(std::string path_to_config_file,
-                                             XBot::SharedMemory::Ptr shared_memory,
-                                             XBot::RobotInterface::Ptr robot)
+bool MiscPlugins::Poses::init_control_plugin(XBot::Handle::Ptr handle)
 {
-    _robot = robot;
-    _path_to_config_file = path_to_config_file;
+    _robot = handle->getRobotInterface();
+    _path_to_config_file = handle->getPathToConfigFile();
 
     _change_configuration = false;
     _current_configuration = -1;
@@ -106,7 +106,7 @@ void MiscPlugins::Poses::control_loop(double time, double period)
     if(!_change_configuration) {
 
         // blocking reading: wait for a command
-        while(!command.read(current_command)){
+        if(current_command.str().empty()) {
             return;
         }
 
@@ -124,7 +124,7 @@ void MiscPlugins::Poses::control_loop(double time, double period)
             _change_configuration = true;
         }
         else {
-            DPRINTF("Command : %s is not supported\n", current_command.str().c_str());
+            Logger::error("Command : %s is not supported\n", current_command.str().c_str());
         }
     }
 

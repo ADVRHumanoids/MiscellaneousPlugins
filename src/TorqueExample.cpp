@@ -4,11 +4,9 @@
 REGISTER_XBOT_PLUGIN(TorqueExample, MiscPlugins::TorqueExample)
 
 
-bool MiscPlugins::TorqueExample::init_control_plugin(std::string path_to_config_file, 
-                                                     XBot::SharedMemory::Ptr shared_memory, 
-                                                     XBot::RobotInterface::Ptr robot)
+bool MiscPlugins::TorqueExample::init_control_plugin(XBot::Handle::Ptr handle)
 {
-    _robot = robot;
+    _robot = handle->getRobotInterface();
     _robot->getRobotState("home", _q_home);
     
     _q0 = _q_home;
@@ -32,7 +30,7 @@ void MiscPlugins::TorqueExample::control_loop(double time, double period)
 {
    
     
-    if(command.read(current_command)){
+    if(!current_command.str().empty()){
         
         _starting_time = time;
         

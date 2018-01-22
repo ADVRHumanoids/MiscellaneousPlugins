@@ -2,6 +2,7 @@
 #include <OpenSoT/tasks/velocity/MinimizeAcceleration.h>
 #include <OpenSoT/tasks/velocity/Manipulability.h>
 #include <OpenSoT/tasks/velocity/MinimumEffort.h>
+#include <OpenSoT/SubTask.h>
 
 REGISTER_XBOT_PLUGIN(OpenSotIk, MiscPlugins::OpenSotIk)
 
@@ -15,14 +16,12 @@ void setWorld(const KDL::Frame& l_sole_T_Waist, Eigen::VectorXd& q, XBot::ModelI
 }
 
 
-bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
-                                    XBot::SharedMemory::Ptr shared_memory,
-                                    XBot::RobotInterface::Ptr robot)
+bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 {
     _logger = XBot::MatLogger::getLogger("/tmp/OpenSotIk_logger");
 
-    _robot = robot;
-    _model = XBot::ModelInterface::getModel(path_to_config_file);
+    _robot = handle->getRobotInterface();
+    _model = XBot::ModelInterface::getModel(handle->getPathToConfigFile());
 
     _robot->sense();
     _robot->model().getJointPosition(_q0);
@@ -65,11 +64,10 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
 
     std::cout<<"home: "<<_qhome<<std::endl;
 
-    _left_ref = shared_memory->get<Eigen::Affine3d>("w_T_left_ee");
-    _right_ref = shared_memory->get<Eigen::Affine3d>("w_T_right_ee");
-
-    _left_ref.reset(new Eigen::Affine3d);
-    _right_ref.reset(new Eigen::Affine3d);
+    _left_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_left_ee");
+    _right_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_right_ee");
+    
+    _joint_ref = handle->getSharedMemory()->getSharedObject<MiscPlugins::Vector>("joint_positions_desired");
 
     std::vector<bool> active_joints(_model->getJointNum(), true);
     active_joints[_model->getDofIndex(_model->chain("torso").getJointId(0))] = false;
@@ -79,8 +77,8 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _left_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_LEFT",
                                                             _qhome,
                                                             *_model,
-                                                            "LSoftHand",
-//                                                             _model->chain("left_arm").getTipLinkName(),
+//                                                             "LSoftHand",
+                                                            _model->chain("left_arm").getTipLinkName(),
                                                             "world"
                                                             ) );
      _left_ee->setActiveJointsMask(active_joints);
@@ -88,40 +86,24 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
                                                              *_model,
-                                                             "RSoftHand",
-//                                                              _model->chain("right_arm").getTipLinkName(),
+//                                                              "RSoftHand",
+                                                             _model->chain("right_arm").getTipLinkName(),
                                                              "world"
                                                              ) );
     _right_ee->setActiveJointsMask(active_joints);
 
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
-//     Eigen::VectorXd weight;
-//     weight.setOnes((_model->getJointNum()));
-//     weight(0) = 100;
-    _postural->setLambda(0.0);
-//     _postural->setWeight(weight.asDiagonal());
-    
+    _postural->setLambda(0.1);
     _postural->setActiveJointsMask(active_joints);
 
-    /* Create min acc task */
-    OpenSoT::tasks::velocity::MinimizeAcceleration::Ptr min_acc( new OpenSoT::tasks::velocity::MinimizeAcceleration(_qhome) );
 
-    /* Manipulability task */
-    OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_right( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _right_ee) );
-    OpenSoT::tasks::velocity::Manipulability::Ptr manipulability_left( new OpenSoT::tasks::velocity::Manipulability(_qhome, *_model, _left_ee) );
-
-
-
-
-
-    /* Create joint limits & velocity limits */
+    /* Create joint limits & velocity limits */ //CHECK!
     Eigen::VectorXd qmin, qmax, qdotmax;
     _model->getJointLimits(qmin, qmax);
     _model->getVelocityLimits(qdotmax);
     double qdotmax_min = qdotmax.minCoeff();
     Eigen::VectorXd qdotlims(_qhome.size()); qdotlims.setConstant(_qhome.size(),2.0); // 1.0); // qdotmax_min);
-//     qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
     _final_qdot_lim = 2.0;
 
     _joint_lims.reset( new OpenSoT::constraints::velocity::JointLimits(_qhome, qmax, qmin) );
@@ -142,44 +124,63 @@ bool OpenSotIk::init_control_plugin(std::string path_to_config_file,
                                                             "r_sole",
                                                             "world"
                                                             ) );
+    
+    _waist.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_WAIST",
+                                                            _qhome,
+                                                            *_model,
+                                                            "Waist",
+                                                            "world"
+                                                            ) );
+    std::list<unsigned int> orient_indices;
+    orient_indices.push_back(3);
+    orient_indices.push_back(4);
+    orient_indices.push_back(5);
+    OpenSoT::SubTask::Ptr waist_orient(new OpenSoT::SubTask(_waist, orient_indices));
 
     _com.reset( new OpenSoT::tasks::velocity::CoM(_qhome,*_model));
-    //Eigen::Matrix3d W = Eigen::Matrix3d::Identity();
-    //W(2,2) = 0.0;
-    //_com->setWeight(W);
     
     _com->setActiveJointsMask(active_joints);
     //_com->setLambda(1.0);
+
+
+
+    std::list<unsigned int> neck_indices;
+    neck_indices.push_back(_model->getDofIndex("NeckYawj"));
+    neck_indices.push_back(_model->getDofIndex("NeckPitchj"));
+    OpenSoT::SubTask::Ptr joint_space_gaze(
+                new OpenSoT::SubTask(_postural, neck_indices));
     
-    
-
-
-
-    //            auto_stack = (l_sole + r_sole)/
-//                    (gaze + com)/
-//                    (l_wrist + r_wrist)/
-//                    (postural)<<joint_limits<<vel_limits;
+     std::list<unsigned int> body_indices;
+     for(unsigned int i = 0; i < _model->getJointNum(); ++i)
+     {
+        std::string joint_name = _model->getJointByDofIndex(i)->getJointName();
+        if(joint_name.compare("NeckYawj")!= 0 && joint_name.compare("NeckPitchj")!= 0)
+          body_indices.push_back(_model->getDofIndex(joint_name));
+     }
+    OpenSoT::SubTask::Ptr joint_space_body(
+                new OpenSoT::SubTask(_postural, body_indices));
+        
 
     /* Create autostack and set solver */
     _autostack = (  (_l_sole + _r_sole)/
-                    (_com)/
+                    (_com + joint_space_gaze + waist_orient)/
                     (_right_ee + _left_ee)/
-                    (_postural) ) << _joint_lims << _joint_vel_lims;
+                    (joint_space_body) ) << _joint_lims << _joint_vel_lims;
     _autostack->update(_qhome);               
 
     _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
 
     /* Logger */
     Eigen::Affine3d left_pose, right_pose;
-    _logger->add("left_ref_pos", _left_ref->translation());
-    _logger->add("right_ref_pos", _right_ref->translation());
+    _logger->add("left_ref_pos", _left_ref.get().translation());
+    _logger->add("right_ref_pos", _right_ref.get().translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
     
     _logger->add("com", _com->getActualPosition());
 
-    _logger->add("left_ref_or", _left_ref->linear());
-    _logger->add("right_ref_or", _right_ref->linear());
+    _logger->add("left_ref_or", _left_ref.get().linear());
+    _logger->add("right_ref_or", _right_ref.get().linear());
     _logger->add("left_actual_or", left_pose.linear());
     _logger->add("right_actual_or", right_pose.linear());
     _logger->add("computed_q", _q0);
@@ -204,17 +205,22 @@ void OpenSotIk::on_start(double time)
     _model->syncFrom(*_robot);
     _model->getJointPosition(_q);
 
-
-    _model->getPose(_left_ee->getDistalLink(), *_left_ref);
-    _model->getPose(_right_ee->getDistalLink(), *_right_ref);
+    Eigen::Affine3d left_ee_pose, right_ee_pose;
+   
+    _model->getPose(_left_ee->getDistalLink(), left_ee_pose);
+    _model->getPose(_right_ee->getDistalLink(), right_ee_pose);
+    
+     _left_ref.set(left_ee_pose);
+     _right_ref.set(right_ee_pose);
 
     /* Set cartesian tasks reference */
-    _left_ee->setReference(_left_ref->matrix());
-    _right_ee->setReference(_right_ref->matrix());
+    _postural->setReference(_joint_ref.get());
+    _left_ee->setReference(_left_ref.get().matrix());
+    _right_ee->setReference(_right_ref.get().matrix());
 
     _left_ee->setLambda(0);
     _right_ee->setLambda(0);
-    _postural->setLambda(0);
+    //_postural->setLambda(0);
 
     _start_time = time;
     
@@ -247,38 +253,42 @@ void OpenSotIk::control_loop(double time, double period)
 
     _left_ee->setLambda(alpha);
     _right_ee->setLambda(alpha);
-    _postural->setLambda(alpha);
+    //_postural->setLambda(alpha);
 
 
     /* Set cartesian tasks reference */
-    aux_matrix = _left_ref->matrix();
+    aux_matrix = _left_ref.get().matrix();
     _left_ee->setReference(aux_matrix);
-    aux_matrix= _right_ref->matrix();
+    aux_matrix= _right_ref.get().matrix();
     _right_ee->setReference(aux_matrix);
+//     _postural->setReference(_joint_ref.get()); TBD
+    //std::cout<<"_joint_ref: "<<*_joint_ref<<std::endl;
     
 
     /* Log data */
   
-    _model->getPose(_left_ee->getDistalLink(), left_pose);
-    _model->getPose(_right_ee->getDistalLink(), right_pose);
+//     _model->getPose(_left_ee->getDistalLink(), left_pose);
+//     _model->getPose(_right_ee->getDistalLink(), right_pose);
 
-    _logger->add("left_ref_pos", _left_ref->translation());
-    _logger->add("right_ref_pos", _right_ref->translation());
-    _logger->add("left_actual_pos", left_pose.translation());
-    _logger->add("right_actual_pos", right_pose.translation());
-    
-    _logger->add("com", _com->getActualPosition());
-
-    _logger->add("left_ref_or", _left_ref->linear());
-    _logger->add("right_ref_or", _right_ref->linear());
-    _logger->add("left_actual_or", left_pose.linear());
-    _logger->add("right_actual_or", right_pose.linear());
-    _logger->add("computed_q", _q);
-
-    _logger->add("time", time);
+//     _logger->add("left_ref_pos", _left_ref.get().translation());
+//     _logger->add("right_ref_pos", _right_ref.get().translation());
+//     _logger->add("left_actual_pos", left_pose.translation());
+//     _logger->add("right_actual_pos", right_pose.translation());
+//     
+//     _logger->add("com", _com->getActualPosition());
+// 
+//     _logger->add("left_ref_or", _left_ref.get().linear());
+//     _logger->add("right_ref_or", _right_ref.get().linear());
+//     _logger->add("left_actual_or", left_pose.linear());
+//     _logger->add("right_actual_or", right_pose.linear());
+//     _logger->add("computed_q", _q);
+// 
+//     _logger->add("time", time);
 
 
     /* Stack update and solve */
+    _postural->update(_q);
+    _waist->update(_q);
     _autostack->update(_q);
 
     _dq.setZero(_model->getJointNum());
@@ -288,7 +298,7 @@ void OpenSotIk::control_loop(double time, double period)
         return;
     }
 
-    _logger->add("computed_qdot", _dq/period);
+//     _logger->add("computed_qdot", _dq/period);
 
     /* Update q */
     _q += _dq;

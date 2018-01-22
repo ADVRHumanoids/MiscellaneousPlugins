@@ -5,17 +5,15 @@ REGISTER_XBOT_PLUGIN(Grasp, MiscPlugins::Grasp)
 
 namespace MiscPlugins {
 
-bool Grasp::init_control_plugin(std::string path_to_config_file,
-                                    XBot::SharedMemory::Ptr shared_memory,
-                                    XBot::RobotInterface::Ptr robot)
+bool Grasp::init_control_plugin(XBot::Handle::Ptr handle)
 {
     _logger = XBot::MatLogger::getLogger("/tmp/Grasp_logger");
 
-    _robot = robot;
+    _robot = handle->getRobotInterface();
     
-    _left_ref = shared_memory->get<double>("w_grasp_left");
+    _left_ref = handle->getSharedMemory()->getSharedObject<double>("w_grasp_left");
     
-    _right_ref = shared_memory->get<double>("w_grasp_right");
+    _right_ref = handle->getSharedMemory()->getSharedObject<double>("w_grasp_right");
     
     // hands
     std::map<std::string, XBot::Hand::Ptr> hands = _robot->getHand();
@@ -38,7 +36,8 @@ void Grasp::on_start(double time)
 {
 
     _start_time = time;
-    *_left_ref = *_right_ref = 0;
+    _left_ref.set(0); 
+    _right_ref.set(0);
 
     std::cout << "RT_GRASP STARTED!"<< std::endl;
    
@@ -47,8 +46,8 @@ void Grasp::on_start(double time)
 
 void Grasp::control_loop(double time, double period)
 {
-    _RHand->grasp(*_right_ref);
-    _LHand->grasp(*_left_ref);
+    _RHand->grasp(_right_ref.get());
+    _LHand->grasp(_right_ref.get());
     _robot->move();
 
 }

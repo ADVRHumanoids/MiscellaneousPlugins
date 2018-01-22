@@ -32,6 +32,7 @@
 #include <OpenSoT/tasks/velocity/CoM.h>
 
 #include <MiscellaneousPlugins/TransformMessage.h>
+#include <MiscellaneousPlugins/IkRosIoPlugin.h>
 
 namespace MiscPlugins {
 
@@ -39,9 +40,7 @@ class OpenSotIk : public XBot::XBotControlPlugin {
 
 public:
 
-    virtual bool init_control_plugin(std::string path_to_config_file,
-                                    XBot::SharedMemory::Ptr shared_memory,
-                                    XBot::RobotInterface::Ptr robot);
+    virtual bool init_control_plugin(XBot::Handle::Ptr handle);
 
     virtual void on_start(double time);
 
@@ -66,10 +65,13 @@ private:
 
     XBot::SharedObject<Eigen::Affine3d> _left_ref, _right_ref;
     
+    XBot::SharedObject<MiscPlugins::Vector> _joint_ref;
+    
     Eigen::MatrixXd _aux_matrix;
 
     OpenSoT::tasks::velocity::Cartesian::Ptr _left_ee, _right_ee;
     OpenSoT::tasks::velocity::Cartesian::Ptr _l_sole, _r_sole;
+    OpenSoT::tasks::velocity::Cartesian::Ptr _waist;
     OpenSoT::tasks::velocity::CoM::Ptr _com;
     OpenSoT::tasks::velocity::Postural::Ptr _postural;
     OpenSoT::constraints::velocity::JointLimits::Ptr _joint_lims;
