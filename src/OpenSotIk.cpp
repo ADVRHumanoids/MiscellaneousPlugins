@@ -77,8 +77,8 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     _left_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_LEFT",
                                                             _qhome,
                                                             *_model,
-                                                            "LSoftHand",
-//                                                             _model->chain("left_arm").getTipLinkName(),
+//                                                             "LSoftHand",
+                                                            _model->chain("left_arm").getTipLinkName(),
                                                             "world"
                                                             ) );
      _left_ee->setActiveJointsMask(active_joints);
@@ -86,8 +86,8 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
                                                              *_model,
-                                                             "RSoftHand",
-//                                                              _model->chain("right_arm").getTipLinkName(),
+//                                                              "RSoftHand",
+                                                             _model->chain("right_arm").getTipLinkName(),
                                                              "world"
                                                              ) );
     _right_ee->setActiveJointsMask(active_joints);
