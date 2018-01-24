@@ -71,7 +71,6 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 
     std::vector<bool> active_joints(_model->getJointNum(), true);
     active_joints[_model->getDofIndex(_model->chain("torso").getJointId(0))] = false;
-    active_joints[_model->getDofIndex(_model->chain("torso").getJointId(1))] = false;
 
     /* Create cartesian tasks for both hands */
     _left_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_LEFT",
@@ -82,6 +81,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
                                                             "world"
                                                             ) );
      _left_ee->setActiveJointsMask(active_joints);
+     _left_ee->setOrientationErrorGain(0.1);
 
     _right_ee.reset( new OpenSoT::tasks::velocity::Cartesian("CARTESIAN_RIGHT",
                                                              _qhome,
@@ -91,6 +91,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
                                                              "world"
                                                              ) );
     _right_ee->setActiveJointsMask(active_joints);
+    _right_ee->setOrientationErrorGain(0.1);
 
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
