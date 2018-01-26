@@ -51,7 +51,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     l_sole_T_Waist.p.x(0.0);
     l_sole_T_Waist.p.y(0.0);
 
-    setWorld(l_sole_T_Waist, _qhome, _model);
+    setWorld(l_sole_T_Waist, _q, _model);
     _model->setJointPosition(this->_q);
     _model->update();
 
