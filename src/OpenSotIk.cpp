@@ -262,7 +262,7 @@ void OpenSotIk::control_loop(double time, double period)
     _left_ee->setReference(aux_matrix);
     aux_matrix= _right_ref.get().matrix();
     _right_ee->setReference(aux_matrix);
-    _postural->setReference(_joint_ref.get());
+    //_postural->setReference(_joint_ref.get());<-- THIS IS NOT RT SAFE!
 //     std::cout<<"_joint_ref: "<<_joint_ref.get()<<std::endl;
     
 
