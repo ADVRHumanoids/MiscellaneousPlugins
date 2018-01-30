@@ -54,6 +54,7 @@ private:
     double _start_time, _final_qdot_lim;
     
     Eigen::MatrixXd aux_matrix;
+    Eigen::VectorXd aux_vector;
 
     Eigen::VectorXd _q0, _q, _dq, _qhome;
 
@@ -67,7 +68,6 @@ private:
     
     XBot::SharedObject<MiscPlugins::Vector> _joint_ref;
     
-    Eigen::MatrixXd _aux_matrix;
 
     OpenSoT::tasks::velocity::Cartesian::Ptr _left_ee, _right_ee;
     OpenSoT::tasks::velocity::Cartesian::Ptr _l_sole, _r_sole;
