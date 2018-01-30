@@ -24,6 +24,9 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     _model = XBot::ModelInterface::getModel(handle->getPathToConfigFile());
 
     _robot->sense();
+    _robot->getPositionReference(_q0);
+    _robot->model().setJointPosition(_q0);
+    
     _robot->model().getJointPosition(_q0);
 
     _model->getRobotState("home", _qhome);
@@ -38,7 +41,6 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
             std::cout<<"    VALUE NOT IN LIMITS!!!!";
         std::cout<<std::endl;
     }
-
 
     _model->setJointPosition(_qhome);
     _model->update();
@@ -204,8 +206,15 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 void OpenSotIk::on_start(double time)
 {
 
-    _model->syncFrom(*_robot);
+    //_model->syncFrom(*_robot);
+    Eigen::VectorXd q_ref;
+    _robot->getPositionReference(q_ref);
+    //_robot->model().setJointPosition(_q);
+    
     _model->getJointPosition(_q);
+    _q.segment(6, _model->getJointNum()) = q_ref;
+    _model->setJointPosition(_q);
+    _model->update();
 
     Eigen::Affine3d left_ee_pose, right_ee_pose;
    
