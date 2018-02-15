@@ -136,7 +136,7 @@ if ( Xenomai_FOUND )
     set_xeno_flags(Grasp)
     set_xeno_flags(IkRosIo)
     set_xeno_flags(IkRosSMPub)
-#     set_xeno_flags(FHRosIo)
+    set_xeno_flags(OpenSotIkXSense)
     set_xeno_flags(TorqueExample)
 endif()
 

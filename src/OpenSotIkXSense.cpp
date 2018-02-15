@@ -48,7 +48,7 @@ bool OpenSotIkXSense::init_control_plugin(XBot::Handle::Ptr handle)
     //Here we set the world in the middle of the feet
     KDL::Frame l_sole_T_Waist;
     this->_model->getPose("Waist", "l_sole", l_sole_T_Waist);
-    std::cout<<"l_sole_T_Waist: " <<  l_sole_T_Waist << std::endl;
+    Logger::info()<<"l_sole_T_Waist: " <<  l_sole_T_Waist << Logger::endl;
 
     l_sole_T_Waist.p.x(0.0);
     l_sole_T_Waist.p.y(0.0);
@@ -61,10 +61,10 @@ bool OpenSotIkXSense::init_control_plugin(XBot::Handle::Ptr handle)
     KDL::Frame world_T_bl;
     _model->getPose("Waist",world_T_bl);
 
-    std::cout<<"world_T_bl: " << world_T_bl << std::endl;
+    Logger::info()<<"world_T_bl: " << world_T_bl << Logger::endl;
     ///////////
 
-    std::cout<<"home: "<<_qhome<<std::endl;
+    Logger::info()<<"home: "<<_qhome<<Logger::endl;
 
     _left_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_left_ee");
     _right_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_right_ee");
@@ -256,9 +256,9 @@ void OpenSotIkXSense::on_start(double time)
 
     _start_time = time;
     
-    std::cout << "OpenSotIkTestPlugin STARTED!"<<std::endl;
+    Logger::info() << "OpenSotIkTestPlugin STARTED!"<<Logger::endl;
     for(unsigned int i = 0; i < _q.size(); ++i)
-        std::cout<<"q sensed "<<i<<": "<<_q[i]<<"    expected from home: "<<_qhome[i]<<" --> "<<_model->getJointByDofIndex(i)->getJointName()<<std::endl;
+        Logger::info()<<"q sensed "<<i<<": "<<_q[i]<<"    expected from home: "<<_qhome[i]<<" --> "<<_model->getJointByDofIndex(i)->getJointName()<<Logger::endl;
 }
 
 void OpenSotIkXSense::control_loop(double time, double period)
@@ -327,7 +327,7 @@ void OpenSotIkXSense::control_loop(double time, double period)
     _dq.setZero(_model->getJointNum());
 
     if( !_solver->solve(_dq) ){
-        std::cerr << "UNABLE TO SOLVE" << std::endl;
+         Logger::error(Logger::Severity::HIGH) << "UNABLE TO SOLVE" << Logger::endl;
         return;
     }
 
