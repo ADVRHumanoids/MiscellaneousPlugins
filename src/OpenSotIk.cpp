@@ -45,7 +45,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 //     _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>( (2*3.1415) * 0.5, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
 
     // info
-    std::cout << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome << std::endl;
+    Logger::info() << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome <<Logger::endl;
 
     // read shared memory data for ee pose
     _left_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_left_ee");
@@ -150,6 +150,10 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 void OpenSotIk::on_start(double time)
 {
 
+    _robot->getPositionReference(_q);     
+    _model->setJointPosition(_q);
+    
+    
     _model->syncFrom(*_robot);
     _model->getJointPosition(_q);
 
@@ -174,8 +178,8 @@ void OpenSotIk::on_start(double time)
     
 //     _filter_q.reset(_q);
 
-    std::cout << "OpenSotIkPlugin STARTED!\nInitial q is " << _q.transpose() << std::endl;
-    std::cout << "Home q is " << _qhome.transpose() << std::endl;
+    Logger::info() << "OpenSotIkPlugin STARTED!\nInitial q is " << _q.transpose() <<Logger::endl;
+    Logger::info()<< "Home q is " << _qhome.transpose() << Logger::endl;
 }
 
 void OpenSotIk::control_loop(double time, double period)
@@ -235,7 +239,7 @@ void OpenSotIk::control_loop(double time, double period)
     _dq.setZero(_model->getJointNum());
 
     if( !_solver->solve(_dq) ){
-        std::cerr << "UNABLE TO SOLVE" << std::endl;
+         Logger::error(Logger::Severity::HIGH) << "UNABLE TO SOLVE" <<Logger::endl;
         return;
     }
 
