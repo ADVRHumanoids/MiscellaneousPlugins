@@ -69,6 +69,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 
     _left_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_left_ee");
     _right_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_right_ee");
+    _gaze_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_gaze");
     
     _joint_ref = handle->getSharedMemory()->getSharedObject<MiscPlugins::Vector>("joint_positions_desired");
 
@@ -175,7 +176,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 
     /* Create autostack and set solver */
     _autostack = (  (_l_sole + _r_sole)/
-                    (_com + joint_space_gaze + waist_orient)/
+                    (_com + _gaze + waist_orient)/
                     (_right_ee + _left_ee)/
                     (_postural) ) << _joint_lims << _joint_vel_lims;
     _autostack->update(_qhome);               
@@ -186,6 +187,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     Eigen::Affine3d left_pose, right_pose;
     _logger->add("left_ref_pos", _left_ref.get().translation());
     _logger->add("right_ref_pos", _right_ref.get().translation());
+    _logger->add("gaze_ref", _gaze_ref.get().translation());
     _logger->add("left_actual_pos", left_pose.translation());
     _logger->add("right_actual_pos", right_pose.translation());
     
@@ -283,7 +285,8 @@ void OpenSotIk::control_loop(double time, double period)
     _right_ee->setReference(aux_matrix);
     aux_vector = _joint_ref.get();
     _postural->setReference(aux_vector);
-//     std::cout<<"_joint_ref: "<<_joint_ref.get()<<std::endl;
+    aux_matrix = _gaze_ref.get().matrix();
+    _gaze->setGaze(aux_matrix);
     
 
     /* Log data */
@@ -293,6 +296,7 @@ void OpenSotIk::control_loop(double time, double period)
 
 //     _logger->add("left_ref_pos", _left_ref.get().translation());
 //     _logger->add("right_ref_pos", _right_ref.get().translation());
+//     _logger->add("gaze_ref", _gaze_ref.get().translation());
 //     _logger->add("left_actual_pos", left_pose.translation());
 //     _logger->add("right_actual_pos", right_pose.translation());
 //     

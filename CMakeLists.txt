@@ -84,13 +84,6 @@ if(${OpenSoT_FOUND})
     ycm_library_install(OpenSotIk 1 0 0)
 endif()
 
-### OpenSoT IKXSense
-if(${OpenSoT_FOUND})
-    add_library(OpenSotIkXSense SHARED src/OpenSotIkXSense.cpp)
-    target_link_libraries(OpenSotIkXSense ${XCM_LIBRARIES} ${OpenSoT_LIBRARIES} ${iDynTree_LIBRARIES})
-    ycm_library_install(OpenSotIkXSense 1 0 0)
-endif()
-
 ### Grasp
 add_library(Grasp SHARED src/Grasp.cpp)
 target_link_libraries(Grasp ${XCM_LIBRARIES})
@@ -136,7 +129,6 @@ if ( Xenomai_FOUND )
     set_xeno_flags(Grasp)
     set_xeno_flags(IkRosIo)
     set_xeno_flags(IkRosSMPub)
-    set_xeno_flags(OpenSotIkXSense)
     set_xeno_flags(TorqueExample)
 endif()
 
