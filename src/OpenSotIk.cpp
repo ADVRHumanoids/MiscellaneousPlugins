@@ -239,7 +239,7 @@ void OpenSotIk::on_start(double time)
    
     _model->getPose(_left_ee->getDistalLink(), left_ee_pose);
     _model->getPose(_right_ee->getDistalLink(), right_ee_pose);
-    _model->getPose(_right_ee->getDistalLink(), gaze_pose);
+    _model->getPose("gaze", gaze_pose);
     
      _left_ref.set(left_ee_pose);
      _right_ref.set(right_ee_pose);
