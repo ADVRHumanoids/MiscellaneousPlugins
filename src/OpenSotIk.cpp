@@ -55,7 +55,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     l_sole_T_Waist.p.y(0.0);
 
     setWorld(l_sole_T_Waist, _qhome, _model);
-    _model->setJointPosition(this->_q);
+    _model->setJointPosition(this->_qhome);
     _model->update();
 
 
@@ -165,8 +165,10 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     
 
     _gaze.reset(new OpenSoT::tasks::velocity::Gaze("GAZE", _qhome, *_model, "world"));
-    active_joints[_model->getDofIndex(_model->chain("torso").getJointId(2))] = false;
+    active_joints[_model->getDofIndex(_model->chain("torso").getJointId(1))] = false;
     _gaze->setActiveJointsMask(active_joints);
+    _gaze->setLambda(0.1);
+
 
 
     //            auto_stack = (l_sole + r_sole)/
@@ -211,6 +213,8 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     aux_matrix.resize(4,4);
     aux_vector.resize(_model->getJointNum());
 
+
+
     return true;
 }
 
@@ -220,20 +224,29 @@ void OpenSotIk::on_start(double time)
     //_model->syncFrom(*_robot);
     Eigen::VectorXd q_ref;
     _robot->getPositionReference(q_ref);
+    std::cout<<"q_ref: "<<q_ref.transpose()<<std::endl;
     //_robot->model().setJointPosition(_q);
     
     _model->getJointPosition(_q);
-    _q.segment(6, _model->getJointNum()) = q_ref;
+    std::cout<<"_q: "<<_q.transpose()<<std::endl;
+    _q.segment(6, _model->getActuatedJointNum()) = q_ref;
     _model->setJointPosition(_q);
     _model->update();
 
-    Eigen::Affine3d left_ee_pose, right_ee_pose;
+
+
+    Eigen::Affine3d left_ee_pose, right_ee_pose, gaze_pose;
    
     _model->getPose(_left_ee->getDistalLink(), left_ee_pose);
     _model->getPose(_right_ee->getDistalLink(), right_ee_pose);
+    _model->getPose(_right_ee->getDistalLink(), gaze_pose);
     
      _left_ref.set(left_ee_pose);
      _right_ref.set(right_ee_pose);
+
+     Eigen::Affine3d tmpGaze = gaze_pose;
+     tmpGaze.translation()[0] = 2.;
+     _gaze_ref.set(tmpGaze);
 
     /* Set cartesian tasks reference */
     _postural->setReference(_joint_ref.get());
@@ -287,6 +300,7 @@ void OpenSotIk::control_loop(double time, double period)
     _postural->setReference(aux_vector);
     aux_matrix = _gaze_ref.get().matrix();
     _gaze->setGaze(aux_matrix);
+
     
 
     /* Log data */
