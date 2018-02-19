@@ -269,9 +269,9 @@ void OpenSotIk::control_loop(double time, double period)
 // //     _robot->setPositionReference(_filter_q.process(_q_ref));
 
 
-    _xbot_handle->getNrtImpedanceReference(_nrt_stiffnes, _nrt_damping);
-    _robot->chain("left_arm").setStiffness(_nrt_stiffnes);
-    _robot->chain("right_arm").setStiffness(_nrt_stiffnes);
+    _xbot_handle->getNrtImpedanceReference(_nrt_stiffness, _nrt_damping);
+    _robot->chain("left_arm").setStiffness(_nrt_stiffness);
+    _robot->chain("right_arm").setStiffness(_nrt_stiffness);
     _robot->move();
 
 }

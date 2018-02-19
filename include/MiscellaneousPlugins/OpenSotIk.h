@@ -71,7 +71,7 @@ private:
     XBot::MatLogger::Ptr _logger;
     
     XBot::Handle::Ptr _xbot_handle;
-    XBot::JointIdMap _nrt_stiffnes, _nrt_damping;
+    XBot::JointIdMap _nrt_stiffness, _nrt_damping;
     
 //     XBot::IController::Ptr _controller;
 
