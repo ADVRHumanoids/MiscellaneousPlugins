@@ -11,6 +11,8 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 {
     // logger
     _logger = XBot::MatLogger::getLogger("/tmp/OpenSotIk_logger");
+    
+    _xbot_handle = handle;
 
     // robot and model 
     _robot = handle->getRobotInterface();
@@ -265,6 +267,11 @@ void OpenSotIk::control_loop(double time, double period)
     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
 // //     _model->getJointPosition(_q_ref);
 // //     _robot->setPositionReference(_filter_q.process(_q_ref));
+
+
+    _xbot_handle->getNrtImpedanceReference(_nrt_stiffnes, _nrt_damping);
+    _robot->chain("left_arm").setStiffness(_nrt_stiffnes);
+    _robot->chain("right_arm").setStiffness(_nrt_stiffnes);
     _robot->move();
 
 }
