@@ -29,12 +29,12 @@ bool MiscPlugins::Poses::getJointConfigurations()
     _root_cfg = YAML::LoadFile(_path_to_config_file);
     if(!_root_cfg["JointConfiguration"]) {
 
-        DPRINTF("ERROR in %s ! JointConfigurationPlugin needs mandatory node JointConfiguration in the YAML file!\n", __PRETTY_FUNCTION__);
+        XBot::Logger::error("ERROR in %s ! JointConfigurationPlugin needs mandatory node JointConfiguration in the YAML file!\n", __PRETTY_FUNCTION__);
         return false;
     }
     else if(!_root_cfg["JointConfigurationTime"]) {
 
-        DPRINTF("ERROR in %s ! JointConfigurationPlugin needs mandatory node JointConfigurationTime in the YAML file!\n", __PRETTY_FUNCTION__);
+        XBot::Logger::error("ERROR in %s ! JointConfigurationPlugin needs mandatory node JointConfigurationTime in the YAML file!\n", __PRETTY_FUNCTION__);
         return false;
     }
     else{
@@ -49,7 +49,7 @@ bool MiscPlugins::Poses::getJointConfigurations()
 
             _joint_configuration_name = configuration.as<std::string>();
             // saving joint configuration name
-            DPRINTF("Found joint configuration : %s\n", _joint_configuration_name.c_str());
+            XBot::Logger::info("Found joint configuration : %s\n", _joint_configuration_name.c_str());
             _configuration_name.push_back(_joint_configuration_name);
             _configuration_id_map[_joint_configuration_name] = _configuration_num;
             // getting robot joint state from SRDF using the current joint configuration
@@ -86,6 +86,7 @@ bool MiscPlugins::Poses::init_control_plugin(XBot::Handle::Ptr handle)
 
     _change_configuration = false;
     _current_configuration = -1;
+    _current_pose_id = 0;
     _read_cmd_ok = false;
 
     _logger = XBot::MatLogger::getLogger("/tmp/XBotCore_log");
@@ -100,15 +101,20 @@ bool MiscPlugins::Poses::init_control_plugin(XBot::Handle::Ptr handle)
 
 void MiscPlugins::Poses::control_loop(double time, double period)
 {
-
-
+        
     // if we are not moving to a new joint configuration update t0 and q0
     if(!_change_configuration) {
 
-        // blocking reading: wait for a command
-        if(current_command.str().empty()) {
-            return;
-        }
+        // NOTE continous mode
+        current_command = XBot::Command(_configuration_name.at(_current_pose_id));
+        _current_pose_id = _current_pose_id < (_configuration_num - 1) ? _current_pose_id + 1 : 0;
+        Logger::info("Command : %s in execution\n", current_command.str().c_str());
+
+        
+//         // blocking reading: wait for a command
+//         if(current_command.str().empty()) {
+//             return;
+//         }
 
         // check if the joint configuration requested in the command exists
         if(_configuration_id_map.count(current_command.str())) {
@@ -141,18 +147,21 @@ void MiscPlugins::Poses::control_loop(double time, double period)
         }
         else {
             _change_configuration = false;
+            Logger::info("Command executed!\n");
         }
     }
+
+   
 }
 
 void MiscPlugins::Poses::on_start(double time)
 {
-XBot::XBotControlPlugin::on_start(time);
+    XBot::XBotControlPlugin::on_start(time);
 }
 
 void MiscPlugins::Poses::on_stop(double time)
 {
-XBot::XBotControlPlugin::on_stop(time);
+    XBot::XBotControlPlugin::on_stop(time);
 }
 
 bool MiscPlugins::Poses::close()

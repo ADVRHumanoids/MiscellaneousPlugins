@@ -57,7 +57,7 @@ private:
     std::vector<Eigen::VectorXd> _joint_configuration;
     std::vector<std::string> _configuration_name;
     std::map<std::string, int> _configuration_id_map;
-    int _configuration_num;
+    int _configuration_num, _current_pose_id;
     int _current_configuration;
     std::vector<double> _move_to_configuration_time;
 
