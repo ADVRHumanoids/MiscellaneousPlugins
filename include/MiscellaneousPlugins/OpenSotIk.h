@@ -90,6 +90,11 @@ private:
     
     float _stiffness_z;
     float _prev_stiffness_z;
+    float _z_stiff;
+    
+    Eigen::MatrixXd K_j_star, K_c, K_j, K_offj, J, Jt, JtKc, Jfb, zeros;
+    Eigen::VectorXd tau_ff,dq,qmeas,q,h;
+    int _dim;
 
 };
 
