@@ -146,6 +146,9 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 //     _controller->initialize();
 
 
+    _dq.setZero(48); //ADDED P
+    
+    
     return true;
 }
 
@@ -194,6 +197,7 @@ void OpenSotIk::control_loop(double time, double period)
     
     /* Model update */
     _model->setJointPosition(_q);
+    _model->setJointVelocity(_dq/period); // ADDED P
     _model->update();
 
     /* HACK: shape IK gain to avoid discontinuity */
@@ -264,16 +268,92 @@ void OpenSotIk::control_loop(double time, double period)
 //     _robot->setEffortReference(_tau);
 
     /* Send command to motors */
-    _robot->setReferenceFrom(*_model, XBot::Sync::Position);
+    
 // //     _model->getJointPosition(_q_ref);
 // //     _robot->setPositionReference(_filter_q.process(_q_ref));
 
+    
+    /********* II METHOD BEGIN *********/
+    Eigen::MatrixXd K_j_star, K_c, K_j, K_offj, J(3,42), Jfb, Jt, zeros;
+    Eigen::VectorXd tau_ff,dq,qmeas,q;
+     _robot->model().getRelativeJacobian("arm2_8","torso_2",Jfb);
+//    _model->getRelativeJacobian("arm2_8","torso_2",Jfb);
+    zeros.setZero(6,3);
+    Jfb.block<6,3>(0,42) = zeros; //remove wrist
+    J = Jfb.block<6,42>(0,6); //remove floating base & orientation part
+//     for(int i = 0; i < _robot->getJointNum() + 6 ; i++)
+//       std::cout << "Joint: " << i << " -> " << _robot->model().getJointByDofIndex(i).get()->getJointName() << std::endl;
+    
+    K_c = Eigen::MatrixXd::Identity(6,6) * 1000;
+    
+    K_c(0,0) = 100;
+    K_c(1,1) = 100;
+    K_c(2,2) = 100;
+    K_c(3,3) = K_c(4,4) = K_c(5,5) = 300;
+    
+    K_j_star = J.transpose() * K_c * J;
+    int dim = _robot->getJointNum();
+    K_j.setZero(dim,dim);
+    K_offj.setZero(dim,dim);
+    for(int i = 0; i < dim; i++){
+      for(int j = 0; j < dim; j++){
+        if(i == j)
+          K_j(i,i) = K_j_star(i,i);
+        else
+          K_offj(i,j) = K_j_star(i,j);
+      }
+    }
 
-    _xbot_handle->getNrtImpedanceReference(_nrt_stiffness, _nrt_damping);
-    _robot->chain("left_arm").setStiffness(_nrt_stiffness);
-    _robot->chain("right_arm").setStiffness(_nrt_stiffness);
+    q = _q.segment<42>(6);
+    _robot->getJointPosition(qmeas);
+    dq = q - qmeas;
+    
+//     std::cout << "_q: " << _q.rows() << std::endl;
+//     std::cout << "qmeas: " << qmeas.rows() << std::endl;
+//     std::cout << "dqTot: " << dqTot.rows() << std::endl;
+    
+    tau_ff  = K_offj * dq; // + g(q_d) + C (q_d_dot);
+    Eigen::VectorXd h;
+    _model->computeNonlinearTerm(h);
+    tau_ff += h.segment<42>(6); 
+    
+//     std::cout << "K_j:\n" << K_j.transpose() << std::endl;
+    
+    Eigen::VectorXd K,D;
+    _robot->getStiffness(K);
+    _robot->getDamping(D);
+    for(int i = 32; i < 36; i++){
+      K(i) = K_j(i,i);
+//       if(K(i) < 50)
+//         K(i) = 50;
+//       else if (K(i) > 5000)
+//         K(i) = 5000;
+      
+      D(i) = 10;
+    }
+
+    _robot->setReferenceFrom(*_model, XBot::Sync::Position);
+    
+    _robot->setStiffness(K);
+    _robot->setDamping(D);
+    _robot->setEffortReference(tau_ff);
+    
+//     std::cout << "K: " << K.transpose() << std::endl;
+//     std::cout << "tau_ff: " << tau_ff.transpose() << std::endl;
+    /********** II METHOD END **********/
+
+//     _xbot_handle->getNrtImpedanceReference(_nrt_stiffness, _nrt_damping);
+//     _robot->chain("left_arm").setStiffness(_nrt_stiffness);
+//     _robot->chain("right_arm").setStiffness(_nrt_stiffness);
     _robot->move();
 
+    
+    _logger->add("q", q);
+    _logger->add("qmeas", qmeas);
+    _logger->add("K_offj", K_offj);
+    _logger->add("K", K);
+    _logger->add("dq", dq);
+    _logger->add("tau_ff", tau_ff);
 }
 
 bool OpenSotIk::close()
