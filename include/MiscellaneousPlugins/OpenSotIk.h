@@ -30,6 +30,11 @@
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
 #include <OpenSoT/utils/AutoStack.h>
 
+#include <std_msgs/Float64.h>
+#include <geometry_msgs/Vector3.h>
+
+#include <atomic>
+
 namespace MiscPlugins {
 
 class OpenSotIk : public XBot::XBotControlPlugin {
@@ -46,7 +51,15 @@ public:
 
 
 private:
+  
+    void callback(const geometry_msgs::Vector3ConstPtr& msg)
+    {
+        _sub_value.store(msg->z);
+    }
 
+    std::atomic<float> _sub_value;
+    XBot::RosUtils::SubscriberWrapper::Ptr _sub_rt;
+    
     double _start_time, _final_qdot_lim;
 
     Eigen::VectorXd _q0, _q, _dq, _qhome, _q_ref, _tau, _k0;
@@ -74,6 +87,9 @@ private:
     XBot::JointIdMap _nrt_stiffness, _nrt_damping;
     
 //     XBot::IController::Ptr _controller;
+    
+    float _stiffness_z;
+    float _prev_stiffness_z;
 
 };
 

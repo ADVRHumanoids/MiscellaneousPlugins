@@ -147,8 +147,11 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 
 
     _dq.setZero(48); //ADDED P
+    _sub_rt = handle->getRosHandle()->subscribe<geometry_msgs::Vector3>("/stiffness_vector", 1, &OpenSotIk::callback, this);
     
-    
+    _stiffness_z = 100.0;
+    _prev_stiffness_z = 100.0;
+    std::cout << "Initial stiffness on z-axis set to: " << _stiffness_z << std::endl;
     return true;
 }
 
@@ -272,6 +275,25 @@ void OpenSotIk::control_loop(double time, double period)
 // //     _model->getJointPosition(_q_ref);
 // //     _robot->setPositionReference(_filter_q.process(_q_ref));
 
+    /*****subscriber to stiffness topic *****/
+//     std_msgs::Float64 msg;
+//     geometry_msgs::Vector3 msg;
+    if(_sub_value.load()){
+      _stiffness_z = _sub_value.load();
+//       std::cout << "Stiffness on z-axis desired: " << _stiffness_z << std::endl;
+    }
+    float z_stiff;
+    z_stiff = _prev_stiffness_z;
+    if(_prev_stiffness_z != _stiffness_z){
+      if(_prev_stiffness_z < _stiffness_z)
+        z_stiff+= 5;
+      else
+        z_stiff-= 5;
+      
+      _prev_stiffness_z = z_stiff;
+      std::cout << "Stiffness on z-axis set to: " << z_stiff << std::endl;
+    }
+      
     
     /********* II METHOD BEGIN *********/
     Eigen::MatrixXd K_j_star, K_c, K_j, K_offj, J(3,42), Jfb, Jt, zeros;
@@ -288,7 +310,7 @@ void OpenSotIk::control_loop(double time, double period)
     
     K_c(0,0) = 100;
     K_c(1,1) = 100;
-    K_c(2,2) = 100;
+    K_c(2,2) = z_stiff;
     K_c(3,3) = K_c(4,4) = K_c(5,5) = 300;
     
     K_j_star = J.transpose() * K_c * J;
@@ -328,7 +350,6 @@ void OpenSotIk::control_loop(double time, double period)
 //         K(i) = 50;
 //       else if (K(i) > 5000)
 //         K(i) = 5000;
-      
       D(i) = 10;
     }
 
