@@ -51,7 +51,7 @@ public:
 
 
 private:
-  
+
     void callback(const geometry_msgs::Vector3ConstPtr& msg)
     {
         _sub_value.store(msg->z);
@@ -59,18 +59,18 @@ private:
 
     std::atomic<float> _sub_value;
     XBot::RosUtils::SubscriberWrapper::Ptr _sub_rt;
-    
+
     double _start_time, _final_qdot_lim;
 
     Eigen::VectorXd _q0, _q, _dq, _qhome, _q_ref, _tau, _k0;
-    
+
     XBot::Utils::SecondOrderFilter<Eigen::VectorXd> _filter_q;
 
     XBot::RobotInterface::Ptr _robot;
     XBot::ModelInterface::Ptr _model;
 
     XBot::SharedObject<Eigen::Affine3d> _left_ref, _right_ref;
-    
+
     Eigen::MatrixXd _aux_matrix;
 
     OpenSoT::tasks::velocity::Cartesian::Ptr _left_ee, _right_ee;
@@ -82,18 +82,19 @@ private:
     OpenSoT::solvers::QPOases_sot::Ptr _solver;
 
     XBot::MatLogger::Ptr _logger;
-    
+
     XBot::Handle::Ptr _xbot_handle;
     XBot::JointIdMap _nrt_stiffness, _nrt_damping;
-    
+
 //     XBot::IController::Ptr _controller;
-    
+
     float _stiffness_z;
     float _prev_stiffness_z;
     float _z_stiff;
-    
-    Eigen::MatrixXd K_j_star, K_c, K_j, K_offj, J, Jt, JtKc, Jfb, zeros;
-    Eigen::VectorXd tau_ff,dq,qmeas,q,h;
+
+    Eigen::MatrixXd K_c, K_j, K_offj, Jfb, zeros;
+    Eigen::Matrix<double, Eigen::Dynamic,  Eigen::Dynamic, 0, 50, 50> JtKc, K_j_star,Jt,J;
+    Eigen::VectorXd tau_ff,tau_ffz,dq,qmeas,q,h,K,D;
     int _dim;
 
 };

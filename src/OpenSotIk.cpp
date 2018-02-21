@@ -151,7 +151,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 
     _stiffness_z = 150.0;
     _prev_stiffness_z = 150.0;
-    
+
     _dim = _robot->getJointNum();
     int dim_fb = _model->getJointNum();
     Jfb.resize(6,dim_fb);
@@ -164,11 +164,14 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     K_j.setZero(_dim,_dim);
     K_offj.setZero(_dim,_dim);
     tau_ff.resize(_dim);
+    tau_ffz.resize(_dim);
     qmeas.resize(_dim);
     q.resize(_dim);
     h.resize(dim_fb);
-    
-    
+    K.resize(_dim);
+    D.resize(_dim);
+
+
     std::cout << "Initial stiffness on z-axis set to: " << _stiffness_z << std::endl;
     return true;
 }
@@ -223,7 +226,6 @@ void OpenSotIk::control_loop(double time, double period)
 
     /* Model update */
     _model->setJointPosition(_q);
-    _model->setJointVelocity(_dq/period); // ADDED P
     _model->update();
 
     /* HACK: shape IK gain to avoid discontinuity */
@@ -318,10 +320,10 @@ void OpenSotIk::control_loop(double time, double period)
 
 
     /********* II METHOD BEGIN *********/
-
+    _robot->model().syncFrom(*_robot, XBot::Sync::Position, XBot::Sync::Velocity, XBot::Sync::MotorSide);
     _robot->model().getRelativeJacobian("arm2_8","torso_2",Jfb);
-    Jfb.block<6,3>(0,42) = zeros; //remove wrist
-    J = Jfb.block<6,42>(0,6); //remove floating base & orientation part
+    //Jfb.block<6,3>(0,42) = zeros; //remove wrist
+    J = Jfb.block<6,42>(0,6); //remove floating base
 
     K_c(0,0) = 150;
     K_c(1,1) = 150;
@@ -329,10 +331,15 @@ void OpenSotIk::control_loop(double time, double period)
     K_c(3,3) = K_c(4,4) = K_c(5,5) = 300;
 
     Jt = J.transpose();
-    JtKc = Jt * K_c;
-    K_j_star = JtKc * J;
-    
-    for(int i = 0; i < _dim; i++){
+
+    JtKc.noalias() = Jt * K_c;
+    K_j_star.noalias() = JtKc * J;
+
+    //std::cout << "K_j_star: " << K_j_star.rows() << "x" << K_j_star.cols() << std::endl;
+    //std::cout << "Jt: " << Jt.rows() << "x" << Jt.cols() << std::endl;
+    //std::cout << "J: " << J.rows() << "x" << J.cols() << std::endl;
+
+   for(int i = 0; i < _dim; i++){
       for(int j = 0; j < _dim; j++){
         if(i == j)
           K_j(i,i) = K_j_star(i,i);
@@ -342,14 +349,15 @@ void OpenSotIk::control_loop(double time, double period)
     }
 
     q = _q.segment<42>(6);
-    _robot->getJointPosition(qmeas);
+    _robot->getMotorPosition(qmeas);
     dq = q - qmeas;
 
     _robot->model().computeNonlinearTerm(h);
-    tau_ff  = K_offj * dq + h.segment<42>(6);
+    K_offj.setZero(K_offj.rows(),K_offj.cols());
+    tau_ffz.noalias()  = K_offj * dq;
+    tau_ff = tau_ffz + h.segment<42>(6);
 
 
-    Eigen::VectorXd K,D;
     _robot->getStiffness(K);
     _robot->getDamping(D);
     for(int i = 32; i < 36; i++){
@@ -384,7 +392,7 @@ void OpenSotIk::control_loop(double time, double period)
     _logger->add("dq", dq);
     _logger->add("tau_ff", tau_ff);
     _logger->add("_z_stiff", _z_stiff);
-    
+
 }
 
 bool OpenSotIk::close()
