@@ -11,13 +11,13 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 {
     // logger
     _logger = XBot::MatLogger::getLogger("/tmp/OpenSotIk_logger");
-    
+
     _xbot_handle = handle;
 
-    // robot and model 
+    // robot and model
     _robot = handle->getRobotInterface();
     _model = XBot::ModelInterface::getModel(handle->getPathToConfigFile());
-    
+
 //     // starting position
 //     _robot->sense();
 //     _robot->model().getJointPosition(_q0);
@@ -32,18 +32,18 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     {
         std::string name = _model->getJointByDofIndex(i)->getJointName();
         double q_min, q_max;
-        
+
         _model->getJointByDofIndex(i)->getJointLimits(q_min, q_max);
-        
+
         std::cout<<name<<": "<<q_min<<" < "<<_qhome(i)<<" "<<" < "<<q_max;
-        
+
         if(_qhome(i) > q_max || _qhome(i) < q_min) {
             std::cout<<"    VALUE NOT IN LIMITS!!!!";
         }
-        
+
         std::cout<<std::endl;
     }
-    
+
 //     _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>( (2*3.1415) * 0.5, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
 
     // info
@@ -75,17 +75,17 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
                                                              ) );
 //     _right_ee->setActiveJointsMask(active_joints);
 
-    
+
     /* Create postural task */
     _postural.reset( new OpenSoT::tasks::velocity::Postural(_qhome) );
-    
-    
+
+
 //     Eigen::VectorXd weight;
 //     weight.setOnes((_model->getJointNum()));
 //     weight(0) = 100;
 //     _postural->setWeight(weight.asDiagonal());
-    
-    
+
+
 //     _postural->setLambda(0.0);
 
     /* Create min acc task */
@@ -98,7 +98,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     /* Minimum effort task */
 //     OpenSoT::tasks::velocity::MinimumEffort::Ptr min_effort( new OpenSoT::tasks::velocity::MinimumEffort(_qhome, *_model) );
 //     min_effort->setLambda(0.01);
-    
+
     // NOTE min acc - manipulapility - min effort NOT USED
 
 
@@ -107,7 +107,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     _model->getJointLimits(qmin, qmax);
     _model->getVelocityLimits(qdotmax);
     double qdotmax_min = qdotmax.minCoeff();  // NOTE too high
-    Eigen::VectorXd qdotlims(_qhome.size()); 
+    Eigen::VectorXd qdotlims(_qhome.size());
     qdotlims.setConstant(_qhome.size(), qdotmax_min);
 //     qdotlims[_model->getDofIndex(_model->chain("torso").getJointId(1))] = 0.01;
 
@@ -132,12 +132,12 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     _logger->add("right_ref_or", _right_ref.get().linear());
     _logger->add("left_actual_or", left_pose.linear());
     _logger->add("right_actual_or", right_pose.linear());
-    
+
     _logger->add("computed_q", _q0);
     _logger->add("computed_qdot", _q0);
-    
+
     _logger->add("time", 0.0);
-    
+
     // allocate a qudratic spring controller
 //     _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, _model, 1000, 500);
 //     // attacch logger
@@ -148,7 +148,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 
     _dq.setZero(48); //ADDED P
     _sub_rt = handle->getRosHandle()->subscribe<geometry_msgs::Vector3>("/stiffness_vector", 1, &OpenSotIk::callback, this);
-    
+
     _stiffness_z = 100.0;
     _prev_stiffness_z = 100.0;
     std::cout << "Initial stiffness on z-axis set to: " << _stiffness_z << std::endl;
@@ -157,13 +157,18 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 
 void OpenSotIk::on_start(double time)
 {
+    //_model->syncFrom(*_robot);
+    Eigen::VectorXd q_ref;
+    _robot->getPositionReference(q_ref);
 
-    _model->syncFrom(*_robot);
     _model->getJointPosition(_q);
+    _q.segment(6, _model->getActuatedJointNum()) = q_ref;
+    _model->setJointPosition(_q);
+    _model->update();
 
 
     Eigen::Affine3d left_ee_pose, right_ee_pose;
-  
+
     _model->getPose(_left_ee->getDistalLink(), _left_ee->getBaseLink(), left_ee_pose);
     _model->getPose(_right_ee->getDistalLink(), _right_ee->getBaseLink(), right_ee_pose);
 
@@ -179,7 +184,7 @@ void OpenSotIk::on_start(double time)
     _postural->setLambda(0);
 
     _start_time = time;
-    
+
 //     _filter_q.reset(_q);
 
     std::cout << "OpenSotIkPlugin STARTED!\nInitial q is " << _q.transpose() << std::endl;
@@ -197,7 +202,7 @@ void OpenSotIk::control_loop(double time, double period)
 //             _controller->init_control();
 //         }
 //     }
-    
+
     /* Model update */
     _model->setJointPosition(_q);
     _model->setJointVelocity(_dq/period); // ADDED P
@@ -234,7 +239,7 @@ void OpenSotIk::control_loop(double time, double period)
     _logger->add("left_actual_or", left_pose.linear());
     _logger->add("right_actual_or", right_pose.linear());
     _logger->add("computed_q", _q);
-    
+
     _logger->add("time", time);
 
 
@@ -244,7 +249,7 @@ void OpenSotIk::control_loop(double time, double period)
     _dq.setZero(_model->getJointNum());
 
     if( !_solver->solve(_dq) ){
-        std::cerr << "UNABLE TO SOLVE" << std::endl;
+	XBot::Logger::error() << "UNABLE TO SOLVE" << XBot::Logger::endl();
         return;
     }
 
@@ -252,26 +257,26 @@ void OpenSotIk::control_loop(double time, double period)
 
     /* Update q */
     _q += _dq;
-    
-    
+
+
     // check if stiffness regulation command is given
 //     if( current_command.str() == "stiffness_regulation") {
-//         
+//
 //         _controller->control();
 //     }
-    
+
     // stop stiffness regulation
 //     if( current_command.str() == "stiffness_regulation_OFF") {
 //         _robot->setStiffness(_k0);
 //     }
 
-    
+
     // gravity compensation
 //     _robot->model().computeGravityCompensation(_tau);
 //     _robot->setEffortReference(_tau);
 
     /* Send command to motors */
-    
+
 // //     _model->getJointPosition(_q_ref);
 // //     _robot->setPositionReference(_filter_q.process(_q_ref));
 
@@ -289,12 +294,12 @@ void OpenSotIk::control_loop(double time, double period)
         z_stiff+= 5;
       else
         z_stiff-= 5;
-      
+
       _prev_stiffness_z = z_stiff;
       std::cout << "Stiffness on z-axis set to: " << z_stiff << std::endl;
     }
-      
-    
+
+
     /********* II METHOD BEGIN *********/
     Eigen::MatrixXd K_j_star, K_c, K_j, K_offj, J(3,42), Jfb, Jt, zeros;
     Eigen::VectorXd tau_ff,dq,qmeas,q;
@@ -305,14 +310,14 @@ void OpenSotIk::control_loop(double time, double period)
     J = Jfb.block<6,42>(0,6); //remove floating base & orientation part
 //     for(int i = 0; i < _robot->getJointNum() + 6 ; i++)
 //       std::cout << "Joint: " << i << " -> " << _robot->model().getJointByDofIndex(i).get()->getJointName() << std::endl;
-    
+
     K_c = Eigen::MatrixXd::Identity(6,6) * 1000;
-    
+
     K_c(0,0) = 100;
     K_c(1,1) = 100;
     K_c(2,2) = z_stiff;
     K_c(3,3) = K_c(4,4) = K_c(5,5) = 300;
-    
+
     K_j_star = J.transpose() * K_c * J;
     int dim = _robot->getJointNum();
     K_j.setZero(dim,dim);
@@ -329,18 +334,18 @@ void OpenSotIk::control_loop(double time, double period)
     q = _q.segment<42>(6);
     _robot->getJointPosition(qmeas);
     dq = q - qmeas;
-    
+
 //     std::cout << "_q: " << _q.rows() << std::endl;
 //     std::cout << "qmeas: " << qmeas.rows() << std::endl;
 //     std::cout << "dqTot: " << dqTot.rows() << std::endl;
-    
+
     tau_ff  = K_offj * dq; // + g(q_d) + C (q_d_dot);
     Eigen::VectorXd h;
-    _model->computeNonlinearTerm(h);
-    tau_ff += h.segment<42>(6); 
-    
+    _robot->model().computeNonlinearTerm(h);
+    tau_ff += h.segment<42>(6);
+
 //     std::cout << "K_j:\n" << K_j.transpose() << std::endl;
-    
+
     Eigen::VectorXd K,D;
     _robot->getStiffness(K);
     _robot->getDamping(D);
@@ -354,11 +359,11 @@ void OpenSotIk::control_loop(double time, double period)
     }
 
     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
-    
+
     _robot->setStiffness(K);
     _robot->setDamping(D);
     _robot->setEffortReference(tau_ff);
-    
+
 //     std::cout << "K: " << K.transpose() << std::endl;
 //     std::cout << "tau_ff: " << tau_ff.transpose() << std::endl;
     /********** II METHOD END **********/
@@ -368,7 +373,7 @@ void OpenSotIk::control_loop(double time, double period)
 //     _robot->chain("right_arm").setStiffness(_nrt_stiffness);
     _robot->move();
 
-    
+
     _logger->add("q", q);
     _logger->add("qmeas", qmeas);
     _logger->add("K_offj", K_offj);
