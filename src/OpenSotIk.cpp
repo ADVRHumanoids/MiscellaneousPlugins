@@ -174,6 +174,15 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     h.resize(dim_fb);
     K.resize(_dim);
     D.resize(_dim);
+    D_c.setZero(6,6);
+    Xerr.setZero(6);
+    Xerr_prev.setZero(6);
+    Xerr_dot.setZero(6);
+    F_c1.setZero(6);
+    F_c2.setZero(6);
+    F_c.setZero(6);
+    firstCycle = true;
+    torques.resize(_dim);
 
 
     std::cout << "Initial stiffness on z-axis set to: " << _stiffness_z << std::endl;
@@ -316,91 +325,144 @@ void OpenSotIk::control_loop(double time, double period)
     _x_stiff = _prev_stiffness_x;
     if(_prev_stiffness_x != _stiffness_x){
       if(_prev_stiffness_x < _stiffness_x)
-        _x_stiff+= 1;
+        _x_stiff+= 10;
       else
-        _x_stiff-= 1;
+        _x_stiff-= 10;
 
       _prev_stiffness_x = _x_stiff;
+      std::cout << "_x_stiff: " << _x_stiff << std::endl;
     }
 
     _y_stiff = _prev_stiffness_y;
     if(_prev_stiffness_y != _stiffness_y){
       if(_prev_stiffness_y < _stiffness_y)
-        _y_stiff+= 1;
+        _y_stiff+= 10;
       else
-        _y_stiff-= 1;
+        _y_stiff-= 10;
 
       _prev_stiffness_y = _y_stiff;
+      std::cout << "_y_stiff: " << _y_stiff << std::endl;
     }
 
     _z_stiff = _prev_stiffness_z;
     if(_prev_stiffness_z != _stiffness_z){
       if(_prev_stiffness_z < _stiffness_z)
-        _z_stiff+= 1;
+        _z_stiff+= 10;
       else
-        _z_stiff-= 1;
-
+        _z_stiff-= 10;
+      
+      std::cout << "_z_stiff: " << _z_stiff << std::endl;
       _prev_stiffness_z = _z_stiff;
     }
 
 
-    /********* II METHOD BEGIN *********/
+//     /********* II METHOD BEGIN *********/
+//     _robot->model().syncFrom(*_robot, XBot::Sync::Position, XBot::Sync::Velocity, XBot::Sync::MotorSide);
+//     _robot->model().getRelativeJacobian("arm2_8","torso_2",Jfb);
+// 
+//     //Jfb.block<6,3>(0,42) = zeros; //remove wrist
+//     J = Jfb.block<6,42>(0,6); //remove floating base
+// 
+//     K_c(0,0) = _x_stiff;
+//     K_c(1,1) = _y_stiff;
+//     K_c(2,2) = _z_stiff;
+//     K_c(3,3) = K_c(4,4) = K_c(5,5) = 300;
+// 
+//     Jt = J.transpose();
+// 
+//     JtKc.noalias() = Jt * K_c;
+//     K_j_star.noalias() = JtKc * J;
+// 
+// 
+//    for(int i = 0; i < _dim; i++){
+//       for(int j = 0; j < _dim; j++){
+//         if(i == j)
+//           K_j(i,i) = K_j_star(i,i);
+//         else
+//           K_offj(i,j) = K_j_star(i,j);
+//       }
+//     }
+// 
+//     q = _q.segment<42>(6);
+//     _robot->getMotorPosition(qmeas);
+//     dq = q - qmeas;
+// 
+//     _robot->model().computeNonlinearTerm(h);
+//     K_offj.setZero(K_offj.rows(),K_offj.cols());
+//     tau_ffz.noalias()  = K_offj * dq;
+//     tau_ff = tau_ffz + h.segment<42>(6);
+// 
+// 
+//     _robot->getStiffness(K);
+//     _robot->getDamping(D);
+//     for(int i = 32; i < 36+3; i++){
+//       K(i) = K_j(i,i);
+// //       if(K(i) < 50)
+// //         K(i) = 50;
+// //       else if (K(i) > 5000)
+// //         K(i) = 5000;
+//       D(i) = 10;
+//     }
+// 
+//     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
+// 
+//     _robot->setStiffness(K);
+//     _robot->setDamping(D);
+//     _robot->setEffortReference(tau_ff);
+// 
+// //     std::cout << "K: " << K.transpose() << std::endl;
+// //     std::cout << "tau_ff: " << tau_ff.transpose() << std::endl;
+//     /********** II METHOD END **********/
+    
+    /********* III METHOD BEGIN *********/
     _robot->model().syncFrom(*_robot, XBot::Sync::Position, XBot::Sync::Velocity, XBot::Sync::MotorSide);
     _robot->model().getRelativeJacobian("arm2_8","torso_2",Jfb);
 
     //Jfb.block<6,3>(0,42) = zeros; //remove wrist
     J = Jfb.block<6,42>(0,6); //remove floating base
 
+    q = _q.segment<42>(6);
+    _robot->getMotorPosition(qmeas);
+    dq = q - qmeas;
+    
+    Xerr.noalias() = J * dq;
+    
+    if(firstCycle){
+      Xerr_prev = Xerr;
+      firstCycle = false;
+    }
+    
+    Xerr_dot.noalias() = (Xerr - Xerr_prev) / period;
+    
+    
     K_c(0,0) = _x_stiff;
     K_c(1,1) = _y_stiff;
     K_c(2,2) = _z_stiff;
     K_c(3,3) = K_c(4,4) = K_c(5,5) = 300;
+    
+    for(int i = 0; i < 6; i++){
+      D_c(i,i) = 30;
+    }
+    
+    F_c1.noalias() = K_c * Xerr;
+    F_c2.noalias() = D_c * Xerr_dot;
+    F_c = F_c1 + F_c2;
 
     Jt = J.transpose();
+    
+    torques.noalias() = Jt * F_c;
 
-    JtKc.noalias() = Jt * K_c;
-    K_j_star.noalias() = JtKc * J;
-
-
-   for(int i = 0; i < _dim; i++){
-      for(int j = 0; j < _dim; j++){
-        if(i == j)
-          K_j(i,i) = K_j_star(i,i);
-        else
-          K_offj(i,j) = K_j_star(i,j);
-      }
-    }
-
-    q = _q.segment<42>(6);
-    _robot->getMotorPosition(qmeas);
-    dq = q - qmeas;
-
-    _robot->model().computeNonlinearTerm(h);
-    K_offj.setZero(K_offj.rows(),K_offj.cols());
-    tau_ffz.noalias()  = K_offj * dq;
-    tau_ff = tau_ffz + h.segment<42>(6);
-
-
-    _robot->getStiffness(K);
-    _robot->getDamping(D);
-    for(int i = 32; i < 36+3; i++){
-      K(i) = K_j(i,i);
-//       if(K(i) < 50)
-//         K(i) = 50;
-//       else if (K(i) > 5000)
-//         K(i) = 5000;
-      D(i) = 10;
-    }
-
+    Xerr_prev = Xerr;
+    
     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
 
-    _robot->setStiffness(K);
-    _robot->setDamping(D);
-    _robot->setEffortReference(tau_ff);
 
-//     std::cout << "K: " << K.transpose() << std::endl;
-//     std::cout << "tau_ff: " << tau_ff.transpose() << std::endl;
-    /********** II METHOD END **********/
+    torques(36) = torques(37) = torques(38) = 0;
+    _robot->setEffortReference(torques);
+    
+
+
+    /********** III METHOD END **********/
 
 //     _xbot_handle->getNrtImpedanceReference(_nrt_stiffness, _nrt_damping);
 //     _robot->chain("left_arm").setStiffness(_nrt_stiffness);
@@ -414,7 +476,10 @@ void OpenSotIk::control_loop(double time, double period)
     _logger->add("K", K);
     _logger->add("dq", dq);
     _logger->add("tau_ff", tau_ff);
+    _logger->add("_x_stiff", _x_stiff);
+    _logger->add("_y_stiff", _y_stiff);
     _logger->add("_z_stiff", _z_stiff);
+    _logger->add("torques", torques);
 
 }
 

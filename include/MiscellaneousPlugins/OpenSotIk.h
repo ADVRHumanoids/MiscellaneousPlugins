@@ -94,11 +94,12 @@ private:
     float _stiffness_y,_prev_stiffness_y,_y_stiff;
     float _stiffness_z,_prev_stiffness_z,_z_stiff;
 
-    Eigen::MatrixXd K_c, K_j, K_offj, Jfb, zeros;
+    Eigen::MatrixXd K_c, D_c, K_j, K_offj, Jfb, zeros;
     Eigen::Matrix<double, Eigen::Dynamic,  Eigen::Dynamic, 0, 50, 50> JtKc, K_j_star,Jt,J;
-    Eigen::VectorXd tau_ff,tau_ffz,dq,qmeas,q,h,K,D;
+    Eigen::VectorXd tau_ff,tau_ffz,dq,qmeas,q,h,K,D,Xerr,Xerr_prev,Xerr_dot,F_c,F_c1,F_c2,torques;
 
     int _dim;
+    bool firstCycle;
 
 };
 
