@@ -149,6 +149,10 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     _dq.setZero(48); //ADDED P
     _sub_rt = handle->getRosHandle()->subscribe<geometry_msgs::Vector3>("/stiffness_vector", 1, &OpenSotIk::callback, this);
 
+    _stiffness_x = 150.0;
+    _prev_stiffness_x = 150.0;
+    _stiffness_y = 150.0;
+    _prev_stiffness_y = 150.0;
     _stiffness_z = 150.0;
     _prev_stiffness_z = 150.0;
 
@@ -303,10 +307,32 @@ void OpenSotIk::control_loop(double time, double period)
     /*****subscriber to stiffness topic *****/
 //     std_msgs::Float64 msg;
 //     geometry_msgs::Vector3 msg;
-    if(_sub_value.load()){
-      _stiffness_z = _sub_value.load();
-//       std::cout << "Stiffness on z-axis desired: " << _stiffness_z << std::endl;
+    if(_sub_value_x.load() || _sub_value_y.load() || _sub_value_z.load()){
+      _stiffness_x = _sub_value_x.load();
+      _stiffness_y = _sub_value_y.load();
+      _stiffness_z = _sub_value_z.load();
     }
+    _x_stiff = _prev_stiffness_x;
+    if(_prev_stiffness_x != _stiffness_x){
+      if(_prev_stiffness_x < _stiffness_x)
+        _x_stiff+= 5;
+      else
+        _x_stiff-= 5;
+
+      _prev_stiffness_x = _x_stiff;
+    }
+
+    _y_stiff = _prev_stiffness_y;
+    if(_prev_stiffness_y != _stiffness_y){
+      if(_prev_stiffness_y < _stiffness_y)
+        _y_stiff+= 5;
+      else
+        _y_stiff-= 5;
+
+      _prev_stiffness_y = _y_stiff;
+    }
+
+    
     _z_stiff = _prev_stiffness_z;
     if(_prev_stiffness_z != _stiffness_z){
       if(_prev_stiffness_z < _stiffness_z)
@@ -315,18 +341,18 @@ void OpenSotIk::control_loop(double time, double period)
         _z_stiff-= 5;
 
       _prev_stiffness_z = _z_stiff;
-//       std::cout << "Stiffness on z-axis set to: " << _z_stiff << std::endl;
     }
 
 
     /********* II METHOD BEGIN *********/
     _robot->model().syncFrom(*_robot, XBot::Sync::Position, XBot::Sync::Velocity, XBot::Sync::MotorSide);
     _robot->model().getRelativeJacobian("arm2_8","torso_2",Jfb);
+
     //Jfb.block<6,3>(0,42) = zeros; //remove wrist
     J = Jfb.block<6,42>(0,6); //remove floating base
 
-    K_c(0,0) = 150;
-    K_c(1,1) = 150;
+    K_c(0,0) = _x_stiff;
+    K_c(1,1) = _y_stiff;
     K_c(2,2) = _z_stiff;
     K_c(3,3) = K_c(4,4) = K_c(5,5) = 300;
 
@@ -360,7 +386,7 @@ void OpenSotIk::control_loop(double time, double period)
 
     _robot->getStiffness(K);
     _robot->getDamping(D);
-    for(int i = 32; i < 36; i++){
+    for(int i = 32; i < 36+3; i++){
       K(i) = K_j(i,i);
 //       if(K(i) < 50)
 //         K(i) = 50;

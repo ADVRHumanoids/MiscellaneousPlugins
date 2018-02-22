@@ -54,10 +54,12 @@ private:
 
     void callback(const geometry_msgs::Vector3ConstPtr& msg)
     {
-        _sub_value.store(msg->z);
+        _sub_value_x.store(msg->x);
+        _sub_value_y.store(msg->y);
+        _sub_value_z.store(msg->z);
     }
 
-    std::atomic<float> _sub_value;
+    std::atomic<float> _sub_value_x, _sub_value_y, _sub_value_z;
     XBot::RosUtils::SubscriberWrapper::Ptr _sub_rt;
 
     double _start_time, _final_qdot_lim;
@@ -88,13 +90,14 @@ private:
 
 //     XBot::IController::Ptr _controller;
 
-    float _stiffness_z;
-    float _prev_stiffness_z;
-    float _z_stiff;
+    float _stiffness_x,_prev_stiffness_x,_x_stiff;
+    float _stiffness_y,_prev_stiffness_y,_y_stiff;
+    float _stiffness_z,_prev_stiffness_z,_z_stiff;
 
     Eigen::MatrixXd K_c, K_j, K_offj, Jfb, zeros;
     Eigen::Matrix<double, Eigen::Dynamic,  Eigen::Dynamic, 0, 50, 50> JtKc, K_j_star,Jt,J;
     Eigen::VectorXd tau_ff,tau_ffz,dq,qmeas,q,h,K,D;
+
     int _dim;
 
 };
