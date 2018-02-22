@@ -298,7 +298,7 @@ void OpenSotIk::control_loop(double time, double period)
     _right_ee->setReference(aux_matrix);
     aux_vector = _joint_ref.get();
     _postural->setReference(aux_vector);
-    aux_matrix = _gaze_ref.get().matrix();
+//     aux_matrix = _gaze_ref.get().matrix();
     _gaze->setGaze(aux_matrix);
 
     
