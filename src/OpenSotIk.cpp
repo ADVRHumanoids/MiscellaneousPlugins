@@ -312,12 +312,13 @@ void OpenSotIk::control_loop(double time, double period)
       _stiffness_y = _sub_value_y.load();
       _stiffness_z = _sub_value_z.load();
     }
+    
     _x_stiff = _prev_stiffness_x;
     if(_prev_stiffness_x != _stiffness_x){
       if(_prev_stiffness_x < _stiffness_x)
-        _x_stiff+= 5;
+        _x_stiff+= 1;
       else
-        _x_stiff-= 5;
+        _x_stiff-= 1;
 
       _prev_stiffness_x = _x_stiff;
     }
@@ -325,20 +326,19 @@ void OpenSotIk::control_loop(double time, double period)
     _y_stiff = _prev_stiffness_y;
     if(_prev_stiffness_y != _stiffness_y){
       if(_prev_stiffness_y < _stiffness_y)
-        _y_stiff+= 5;
+        _y_stiff+= 1;
       else
-        _y_stiff-= 5;
+        _y_stiff-= 1;
 
       _prev_stiffness_y = _y_stiff;
     }
 
-    
     _z_stiff = _prev_stiffness_z;
     if(_prev_stiffness_z != _stiffness_z){
       if(_prev_stiffness_z < _stiffness_z)
-        _z_stiff+= 5;
+        _z_stiff+= 1;
       else
-        _z_stiff-= 5;
+        _z_stiff-= 1;
 
       _prev_stiffness_z = _z_stiff;
     }
@@ -361,9 +361,6 @@ void OpenSotIk::control_loop(double time, double period)
     JtKc.noalias() = Jt * K_c;
     K_j_star.noalias() = JtKc * J;
 
-    //std::cout << "K_j_star: " << K_j_star.rows() << "x" << K_j_star.cols() << std::endl;
-    //std::cout << "Jt: " << Jt.rows() << "x" << Jt.cols() << std::endl;
-    //std::cout << "J: " << J.rows() << "x" << J.cols() << std::endl;
 
    for(int i = 0; i < _dim; i++){
       for(int j = 0; j < _dim; j++){
