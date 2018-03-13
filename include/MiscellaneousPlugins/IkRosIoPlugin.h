@@ -24,7 +24,7 @@
 #include <XCM/XBotControlPlugin.h>
 #include <XBotCore-interfaces/XDomainCommunication.h>
 #include <ros/ros.h>
-#include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <eigen_conversions/eigen_msg.h>
 
 #include <XBotInterface/Utils.h>
@@ -43,11 +43,11 @@ private:
 
     std::vector<std::string> _topic_names, _pipe_names;
     std::vector<ros::Subscriber> _sub;
-    std::vector<XBot::PublisherNRT<Eigen::Affine3d>> _pub_nrt;
+    XBot::PublisherNRT<Eigen::Matrix<double,7,1>> _pub_nrt_joint;
+    XBot::PublisherNRT<Eigen::Matrix<double,4,4>> _pub_nrt_stiff;
+    XBot::PublisherNRT<Eigen::Matrix<double,4,4>> _pub_nrt_damp;
 
-    void callback(geometry_msgs::PoseStampedConstPtr msg, int id);
-
-
+    void callback(std_msgs::Float64MultiArrayConstPtr msg, int id);
 
 };
 
@@ -66,12 +66,13 @@ private:
     XBot::RobotInterface::Ptr _robot;
 
     std::vector<std::string> _sharedobj_names, _pipe_names;
-    std::vector<XBot::SharedObject<Eigen::Affine3d>> _shared_obj;
-    std::vector<XBot::SubscriberRT<Eigen::Affine3d>> _sub_rt;
+    XBot::SharedObject<Eigen::Matrix<double,7,1>> _shared_obj_joint;
+    XBot::SharedObject<Eigen::Matrix<double,4,4>> _shared_obj_stiff;
+    XBot::SharedObject<Eigen::Matrix<double,4,4>> _shared_obj_damp;
     
-    XBot::Utils::SecondOrderFilter<Eigen::Vector3d> _filter;
-    
-    Eigen::Affine3d _pose_raw, _pose_ref;
+    XBot::SubscriberRT<Eigen::Matrix<double,7,1>> _sub_rt_joint;
+    XBot::SubscriberRT<Eigen::Matrix<double,4,4>> _sub_rt_stiff;
+    XBot::SubscriberRT<Eigen::Matrix<double,4,4>> _sub_rt_damp;
 
 
 };

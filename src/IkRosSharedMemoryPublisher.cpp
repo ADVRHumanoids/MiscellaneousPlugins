@@ -6,21 +6,17 @@ using namespace MiscPlugins;
 
 bool IkRosRtPlugin::init_control_plugin(XBot::Handle::Ptr handle)
 {
-    _pipe_names = {"w_T_left_ee_ref", "w_T_right_ee_ref"};
-    _sharedobj_names = {"w_T_left_ee", "w_T_right_ee"};
+    _pipe_names = {"xsens_joint", "xsens_stiff", "xsens_damp"};
 
+    _shared_obj_joint = handle->getSharedMemory()->getSharedObject<Eigen::Matrix<double,7,1>>(_pipe_names[0]);
+    _shared_obj_stiff = handle->getSharedMemory()->getSharedObject<Eigen::Matrix<double,4,4>>(_pipe_names[1]);
+    _shared_obj_damp = handle->getSharedMemory()->getSharedObject<Eigen::Matrix<double,4,4>>(_pipe_names[2]);
 
-
-    for(std::string shobj_name : _sharedobj_names){
-        _shared_obj.push_back(handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>(shobj_name));
-    }
-
-    for(std::string pipe_name : _pipe_names){
-        _sub_rt.push_back(XBot::SubscriberRT<Eigen::Affine3d>(pipe_name));
-    }
     
-    _filter = XBot::Utils::SecondOrderFilter<Eigen::Vector3d>( (2*3.1415) * 10, 1.0, 0.001, Eigen::Vector3d::Zero());
-
+    _sub_rt_joint = XBot::SubscriberRT<Eigen::Matrix<double,7,1>>(_pipe_names[0]);
+    _sub_rt_stiff = XBot::SubscriberRT<Eigen::Matrix<double,4,4>>(_pipe_names[1]);
+    _sub_rt_damp = XBot::SubscriberRT<Eigen::Matrix<double,4,4>>(_pipe_names[2]);
+   
     _robot = handle->getRobotInterface();
     
     return true;
@@ -28,31 +24,23 @@ bool IkRosRtPlugin::init_control_plugin(XBot::Handle::Ptr handle)
 
 void IkRosRtPlugin::on_start(double time)
 {
-    Eigen::Affine3d ree_start_pose;
     
-    _robot->model().getPose(_robot->model().chain("right_arm").getTipLinkName(), 
-                            _robot->model().chain("torso").getTipLinkName(), 
-                            ree_start_pose); 
-    _filter.reset(ree_start_pose.translation());
 }
 
 void IkRosRtPlugin::control_loop(double time, double period)
 {
-    for( int i = 0; i < _sharedobj_names.size(); i++ ){
-        if( _sub_rt[i].read(_pose_raw) ){
-            
-            _pose_ref = _pose_raw;
-            
-            Eigen::Vector3d position_raw = _pose_raw.translation();
-            _pose_ref.translation() = _filter.process(position_raw);
-            
-            // NOTE not caring about orientation: put a fixed one
-            _pose_ref.linear() << 0, 0, -1,
-                                  0, 1,  0,
-                                  1, 0,  0;
-            
-            _shared_obj[i].set(_pose_raw);
-//             std::cout << pose.matrix() << std::endl;
-        }
-    }
+     Eigen::Matrix<double,7,1> jnt;
+     if(_sub_rt_joint.read(jnt)){
+        _shared_obj_joint.set(jnt);
+     }     
+    
+     Eigen::Matrix<double,4,4> stiff;
+     if(_sub_rt_stiff.read(stiff)){
+        _shared_obj_stiff.set(stiff);
+     }
+     
+     Eigen::Matrix<double,4,4> damp;
+     if(_sub_rt_damp.read(damp)){
+        _shared_obj_damp.set(damp);
+     }
 }
