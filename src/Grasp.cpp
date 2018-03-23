@@ -18,12 +18,12 @@ bool Grasp::init_control_plugin(XBot::Handle::Ptr handle)
     // hands
     std::map<std::string, XBot::Hand::Ptr> hands = _robot->getHand();
     // RHand
-    auto r_hand_it = hands.find("r_handj");
+    auto r_hand_it = hands.find("r_wrist_joint");
     if(r_hand_it != hands.end()) {
         _RHand = r_hand_it->second;
     }
     // LHand
-    auto l_hand_it = hands.find("l_handj");
+    auto l_hand_it = hands.find("l_wrist_joint");
     if(l_hand_it != hands.end()) {
         _LHand = l_hand_it->second;
     }
@@ -47,7 +47,7 @@ void Grasp::on_start(double time)
 void Grasp::control_loop(double time, double period)
 {
     _RHand->grasp(_right_ref.get());
-    _LHand->grasp(_right_ref.get());
+    _LHand->grasp(_left_ref.get());
     _robot->move();
 
 }
