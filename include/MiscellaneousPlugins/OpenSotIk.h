@@ -66,7 +66,7 @@ private:
     OpenSoT::constraints::velocity::VelocityLimits::Ptr _joint_vel_lims;
 
     OpenSoT::AutoStack::Ptr _autostack;
-    OpenSoT::solvers::QPOases_sot::Ptr _solver;
+    OpenSoT::solvers::iHQP::Ptr _solver;
 
     XBot::MatLogger::Ptr _logger;
     

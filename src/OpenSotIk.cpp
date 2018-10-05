@@ -117,7 +117,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     /* Create autostack and set solver */
     // NOTE MoT is wonderful
     _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims << _joint_vel_lims;
-    _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
+    _solver.reset( new OpenSoT::solvers::iHQP(_autostack->getStack(), _autostack->getBounds(),1e9) );
 
     /* Logger */
     Eigen::Affine3d left_pose, right_pose;
