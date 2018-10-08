@@ -15,10 +15,6 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     // robot and model 
     _robot = handle->getRobotInterface();
     _model = XBot::ModelInterface::getModel(handle->getPathToConfigFile());
-    
-//     // starting position
-//     _robot->sense();
-//     _robot->model().getJointPosition(_q0);
 
     // home from SRDF
     _model->getRobotState("home", _qhome);
@@ -41,11 +37,6 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
         
         std::cout<<std::endl;
     }
-    
-//     _filter_q = XBot::Utils::SecondOrderFilter<Eigen::VectorXd>( (2*3.1415) * 0.5, 1.0, 0.001, Eigen::VectorXd::Zero(_robot->getJointNum()));
-
-    // info
-    std::cout << _model->chain("torso").getTipLinkName() <<  " -- home: " << _qhome << std::endl;
 
     // read shared memory data for ee pose
     _left_ref = handle->getSharedMemory()->getSharedObject<Eigen::Affine3d>("w_T_left_ee");
@@ -84,7 +75,7 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 //     _postural->setWeight(weight.asDiagonal());
     
     
-//     _postural->setLambda(0.0);
+     _postural->setLambda(0.01);
 
     /* Create min acc task */
 //     OpenSoT::tasks::velocity::MinimizeAcceleration::Ptr min_acc( new OpenSoT::tasks::velocity::MinimizeAcceleration(_qhome) );
@@ -116,8 +107,8 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 
     /* Create autostack and set solver */
     // NOTE MoT is wonderful
-    _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims << _joint_vel_lims;
-    _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(),1e9) );
+    _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims ;
+    _solver.reset( new OpenSoT::solvers::iHQP(_autostack->getStack(), _autostack->getBounds(), 1e9) );
 
     /* Logger */
     Eigen::Affine3d left_pose, right_pose;
@@ -135,14 +126,6 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
     _logger->add("computed_qdot", _q0);
     
     _logger->add("time", 0.0);
-    
-    // allocate a qudratic spring controller
-//     _controller = std::make_shared<XBot::Controller::QuadraticSpring>(_robot, _model, 1000, 500);
-//     // attacch logger
-//     _controller->attachLogger(_logger);
-//     // initialize it (RT-safe)
-//     _controller->initialize();
-
 
     return true;
 }
@@ -180,28 +163,19 @@ void OpenSotIk::on_start(double time)
 
 void OpenSotIk::control_loop(double time, double period)
 {
-    // read commands
-//     if(command.read(current_command)){
-//         if( current_command.str() == "stiffness_regulation") {
-//             // store k0
-//             _robot->getStiffness(_k0);
-//             // start the controller
-//             _controller->init_control();
-//         }
-//     }
-    
+
     /* Model update */
     _model->setJointPosition(_q);
     _model->update();
 
     /* HACK: shape IK gain to avoid discontinuity */
     double alpha = 0;
-    alpha = (time - _start_time)/100;
+    alpha = (time - _start_time) / 5000;
     alpha = alpha > .1 ? .1 : alpha;
 
     _left_ee->setLambda(alpha);
     _right_ee->setLambda(alpha);
-    _postural->setLambda(alpha);
+    _postural->setLambda(alpha / 10.);
 
 
     /* Set cartesian tasks reference */
@@ -243,29 +217,12 @@ void OpenSotIk::control_loop(double time, double period)
 
     /* Update q */
     _q += _dq;
-    
-    
-    // check if stiffness regulation command is given
-//     if( current_command.str() == "stiffness_regulation") {
-//         
-//         _controller->control();
-//     }
-    
-    // stop stiffness regulation
-//     if( current_command.str() == "stiffness_regulation_OFF") {
-//         _robot->setStiffness(_k0);
-//     }
-
-    
-    // gravity compensation
-//     _robot->model().computeGravityCompensation(_tau);
-//     _robot->setEffortReference(_tau);
 
     /* Send command to motors */
     _robot->setReferenceFrom(*_model, XBot::Sync::Position);
-// //     _model->getJointPosition(_q_ref);
-// //     _robot->setPositionReference(_filter_q.process(_q_ref));
     _robot->move();
+    
+    _right_ee->log(_logger);
 
 }
 

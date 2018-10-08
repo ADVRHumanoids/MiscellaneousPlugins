@@ -86,6 +86,7 @@ if ( Xenomai_FOUND )
     set_xeno_flags(IkRosIo)
     set_xeno_flags(IkRosSMPub)
     set_xeno_flags(TorqueExample)
+    set_xeno_flags(CirclePublisher)
 endif()
 
 include(AddUninstallTarget)

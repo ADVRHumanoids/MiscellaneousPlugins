@@ -38,7 +38,7 @@ void CirclePublisher::control_loop(double time, double period)
 {
     for( int i : {1} ){
             
-            Eigen::Vector3d position_raw = Eigen::Vector3d(0.55, -0.5, 0.1);
+            Eigen::Vector3d position_raw = Eigen::Vector3d(0.55, -0.5, -0.1);
             
             position_raw.y() += 0.1*std::sin(time);
             position_raw.z() += 0.1*std::cos(time);
