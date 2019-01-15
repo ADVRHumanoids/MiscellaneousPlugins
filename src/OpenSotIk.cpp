@@ -102,12 +102,12 @@ bool OpenSotIk::init_control_plugin(XBot::Handle::Ptr handle)
 
     _joint_lims.reset( new OpenSoT::constraints::velocity::JointLimits(_qhome, qmax, qmin) );
 
-    _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(1.0, 0.001, _qhome.size()));
+    _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(M_PI, 0.001, _qhome.size()));
 //     _joint_vel_lims.reset( new OpenSoT::constraints::velocity::VelocityLimits(qdotlims, 0.001) );
 
     /* Create autostack and set solver */
     // NOTE MoT is wonderful
-    _autostack = ( (_right_ee + _left_ee) / (_postural) ) << _joint_lims ;
+    _autostack = ( (_left_ee + _right_ee ) / (_postural) ) << _joint_lims << _joint_vel_lims ;
     _solver.reset( new OpenSoT::solvers::iHQP(_autostack->getStack(), _autostack->getBounds(), 1e9) );
 
     /* Logger */
@@ -175,7 +175,7 @@ void OpenSotIk::control_loop(double time, double period)
 
     _left_ee->setLambda(alpha);
     _right_ee->setLambda(alpha);
-    _postural->setLambda(alpha / 10.);
+    _postural->setLambda(alpha / 100.);
 
 
     /* Set cartesian tasks reference */
